@@ -35,7 +35,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var wsService  = new WebSocketService();
-            var apiSync    = new ApiSyncService();    // apunta a http://localhost:8080 por defecto
+            var apiSync    = new ApiSyncService();    // apunta a https://ferula-rehabilitacion.onrender.com
             var mainVm     = new MainViewModel(wsService, apiSync);
 
             desktop.MainWindow = new MainWindow { DataContext = mainVm };
