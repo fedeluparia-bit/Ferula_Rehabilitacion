@@ -26,7 +26,8 @@ namespace FerulaSoftware.App.Services;
 /// </summary>
 public sealed class ApiSyncService : IDisposable
 {
-    public static readonly Uri DefaultBaseAddress = new("http://localhost:8080/");
+    public static readonly Uri DefaultBaseAddress = new("https://ferula-rehabilitacion.onrender.com/");
+    public static readonly Uri LocalBaseAddress   = new("http://localhost:8080/");
 
     private readonly HttpClient _http;
 
