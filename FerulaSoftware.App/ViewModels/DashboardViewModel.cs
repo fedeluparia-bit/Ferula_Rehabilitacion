@@ -20,6 +20,8 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     private readonly SesionLibreViewModel _sesionLibre;
     private RutinasProgramadasViewModel?  _rutinasProgramadas;
     private VerInformesViewModel?         _verInformes;
+    private BandejaEntradaViewModel?      _bandejaEntrada;
+    private CompartirRutinaViewModel?     _compartirRutina;
 
     [ObservableProperty] private ViewModelBase _vistaInterior;
 
@@ -77,6 +79,25 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
         // Recarga el historial cada vez que el usuario entra a la vista,
         // para mostrar sesiones guardadas en la sesión actual de la app
         _ = _verInformes.CargarSesionesAsync();
+    }
+
+    [RelayCommand]
+    private void NavegarABandejaEntrada()
+    {
+        if (_bandejaEntrada is null)
+            _bandejaEntrada = new BandejaEntradaViewModel(_dbFactory, _apiSync);
+
+        VistaInterior = _bandejaEntrada;
+
+        // Carga automática al entrar para mostrar invitaciones frescas
+        _ = _bandejaEntrada.DescargarInvitacionesCommand.ExecuteAsync(null);
+    }
+
+    [RelayCommand]
+    private void NavegarACompartirRutina()
+    {
+        _compartirRutina ??= new CompartirRutinaViewModel(_dbFactory, _apiSync);
+        VistaInterior = _compartirRutina;
     }
 
     [RelayCommand]

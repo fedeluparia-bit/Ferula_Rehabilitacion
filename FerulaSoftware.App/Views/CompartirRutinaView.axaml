@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FerulaSoftware.App.ViewModels"
+             xmlns:models="using:FerulaSoftware.App.Models"
+             x:Class="FerulaSoftware.App.Views.CompartirRutinaView"
+             x:DataType="vm:CompartirRutinaViewModel"
+             Background="#0D1117">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="#161B22"
+                BorderBrush="#30363D"
+                BorderThickness="0,0,0,1"
+                Padding="28,20">
+            <StackPanel Spacing="4">
+                <TextBlock Text="COMPARTIR RUTINA"
+                           Foreground="#8B949E" FontSize="11" FontWeight="Bold"
+                           LetterSpacing="1.5"/>
+                <TextBlock Text="Envía un ejercicio a otro usuario"
+                           Foreground="#E6EDF3" FontSize="20" FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Formulario ─────────────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1" Padding="28,20,28,24">
+            <StackPanel Spacing="20" MaxWidth="560">
+
+                <!-- Búsqueda de destinatario -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="DESTINATARIO"
+                               Foreground="#8B949E" FontSize="11" FontWeight="Bold"
+                               LetterSpacing="1.5"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Grid.Column="0"
+                                 Margin="0,0,8,0"
+                                 Text="{Binding BusquedaNombre}"
+                                 Watermark="Nombre o apellido..."
+                                 Background="#161B22" Foreground="#E6EDF3"
+                                 BorderBrush="#30363D" CornerRadius="5"
+                                 FontSize="13"/>
+                        <Button Grid.Column="1"
+                                Content="🔍  Buscar"
+                                Command="{Binding BuscarDestinatarioCommand}"
+                                Classes="btn-secondary"
+                                FontSize="13"/>
+                    </Grid>
+
+                    <!-- Resultados de búsqueda -->
+                    <ListBox ItemsSource="{Binding ResultadosBusqueda}"
+                             SelectedItem="{Binding DestinatarioSeleccionado}"
+                             Background="#161B22"
+                             BorderBrush="#30363D"
+                             BorderThickness="1"
+                             CornerRadius="5"
+                             MaxHeight="160"
+                             IsVisible="{Binding HayResultados}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:Usuario">
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="4,2">
+                                    <TextBlock Text="{Binding NombreCompleto}"
+                                               Foreground="#E6EDF3" FontSize="13"
+                                               VerticalAlignment="Center"/>
+                                    <Border Background="#0D2A1A"
+                                            BorderBrush="#3FB950"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="6,1"
+                                            IsVisible="{Binding EsTerapeuta}">
+                                        <TextBlock Text="Terapeuta"
+                                                   Foreground="#3FB950"
+                                                   FontSize="10"/>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Selección actual -->
+                    <Border Background="#1A2A3A" BorderBrush="#58A6FF" BorderThickness="0,0,0,2"
+                            CornerRadius="5" Padding="10,6"
+                            IsVisible="{Binding DestinatarioSeleccionado,
+                                Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <TextBlock Foreground="#58A6FF" FontSize="13">
+                            <Run Text="Enviando a: "/>
+                            <Run Text="{Binding DestinatarioSeleccionado.NombreCompleto}"
+                                 FontWeight="SemiBold"/>
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+
+                <Separator Background="#30363D" Height="1"/>
+
+                <!-- Parámetros de la rutina -->
+                <StackPanel Spacing="14">
+                    <TextBlock Text="PARÁMETROS DE LA RUTINA"
+                               Foreground="#8B949E" FontSize="11" FontWeight="Bold"
+                               LetterSpacing="1.5"/>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Modo de rehabilitación"
+                                   Foreground="#C9D1D9" FontSize="13"/>
+                        <ComboBox SelectedIndex="{Binding ModoActivo}"
+                                  HorizontalAlignment="Stretch"
+                                  Background="#161B22" Foreground="#E6EDF3"
+                                  BorderBrush="#30363D" CornerRadius="5" FontSize="13">
+                            <ComboBoxItem Content="0 — Resistencia (activo-asistido)"/>
+                            <ComboBoxItem Content="1 — Asistido (pasivo continuo)"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Repeticiones objetivo"
+                                   Foreground="#C9D1D9" FontSize="13"/>
+                        <NumericUpDown Value="{Binding RepeticionesObjetivo}"
+                                       Minimum="1" Maximum="99" Increment="1"
+                                       Background="#161B22" Foreground="#E6EDF3"
+                                       BorderBrush="#30363D" CornerRadius="5"
+                                       FontSize="14" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Separator Background="#30363D" Height="1"/>
+
+                <!-- Opción de terapeuta -->
+                <StackPanel Spacing="8">
+                    <CheckBox IsChecked="{Binding EsTerapeuta}"
+                              Foreground="#C9D1D9" FontSize="13">
+                        Enviar como Terapeuta Verificado
+                    </CheckBox>
+                    <TextBlock Text="El destinatario verá un badge '✔ Terapeuta' junto a tu nombre."
+                               Foreground="#6E7681" FontSize="11" TextWrapping="Wrap"
+                               IsVisible="{Binding EsTerapeuta}"/>
+                </StackPanel>
+
+                <!-- Mensaje de estado -->
+                <TextBlock Text="{Binding MensajeEstado}"
+                           Foreground="#58A6FF" FontSize="13" TextWrapping="Wrap"
+                           IsVisible="{Binding MensajeEstado,
+                               Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                <!-- Botón enviar -->
+                <Button Content="📤  Enviar Rutina"
+                        Command="{Binding EnviarInvitacionCommand}"
+                        IsEnabled="{Binding !Enviando}"
+                        Classes="btn-primary"
+                        FontSize="15"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>

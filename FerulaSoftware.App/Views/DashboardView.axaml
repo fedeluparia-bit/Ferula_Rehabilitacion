@@ -50,6 +50,17 @@
                     <Button Content="📊   Ver Informes"
                             Command="{Binding NavegarAInformesCommand}"
                             Classes="nav-btn"/>
+
+                    <Separator Background="#30363D" Margin="12,8,12,4"/>
+                    <TextBlock Text="COMUNIDAD"
+                               Classes="stat-label"
+                               Margin="12,0,0,8"/>
+                    <Button Content="📬   Bandeja de Entrada"
+                            Command="{Binding NavegarABandejaEntradaCommand}"
+                            Classes="nav-btn"/>
+                    <Button Content="📤   Compartir Rutina"
+                            Command="{Binding NavegarACompartirRutinaCommand}"
+                            Classes="nav-btn"/>
                 </StackPanel>
 
             </DockPanel>
