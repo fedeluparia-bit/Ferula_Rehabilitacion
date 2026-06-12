@@ -134,9 +134,34 @@ public sealed partial class VerInformesViewModel : ViewModelBase
             }
             else
             {
+                // Filtrar por el paciente cuyo nombre coincide con el usuario logueado.
+                // Si no hay sesión activa (modo demo), se muestran todas las sesiones.
+                var usuario = ApiSyncService.UsuarioActual;
                 var lista = await Task.Run(async () =>
                 {
                     await using var db = _dbFactory();
+
+                    if (usuario is not null)
+                    {
+                        // Buscar el PacienteId local que corresponde al usuario autenticado.
+                        var pacienteId = await db.Pacientes
+                            .Where(p => p.Nombre    == usuario.Nombre
+                                     && p.Apellido  == usuario.Apellido)
+                            .Select(p => (int?)p.Id)
+                            .FirstOrDefaultAsync();
+
+                        // Si existe el paciente local → solo sus sesiones.
+                        // Si no existe aún (primer login sin sesiones propias) → lista vacía.
+                        if (pacienteId is null)
+                            return new System.Collections.Generic.List<Sesion>();
+
+                        return await db.Sesiones
+                            .Where(s => s.PacienteId == pacienteId.Value)
+                            .OrderByDescending(s => s.FechaHora)
+                            .ToListAsync();
+                    }
+
+                    // Sin login: comportamiento demo — todas las sesiones
                     return await db.Sesiones
                         .OrderByDescending(s => s.FechaHora)
                         .ToListAsync();
