@@ -20,5 +20,6 @@ public class Paciente
     public DateTime FechaInicio { get; set; }
 
     // Navegación
-    public ICollection<Sesion> Sesiones { get; set; } = [];
+    public ICollection<Sesion>  Sesiones { get; set; } = [];
+    public ICollection<Rutina>  Rutinas  { get; set; } = [];
 }

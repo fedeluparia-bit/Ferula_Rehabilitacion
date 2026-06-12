@@ -34,6 +34,14 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
         _onLogout      = onLogout;
         _sesionLibre   = new SesionLibreViewModel(ws, dbFactory);
         _vistaInterior = _sesionLibre;
+
+        // Cuando SesionLibre termina una sesión vinculada a una rutina, notificar
+        // a la nube y quitar la rutina de la lista sin que SesionLibre conozca la API.
+        _sesionLibre.OnRutinaCompletada = async rutinaId =>
+        {
+            await _apiSync.MarcarRutinaCompletadaAsync(rutinaId);
+            _rutinasProgramadas?.QuitarRutina(rutinaId);
+        };
     }
 
     // ── Comandos de navegación ────────────────────────────────────────────────
@@ -42,8 +50,22 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     private void NavegarASesionLibre() => VistaInterior = _sesionLibre;
 
     [RelayCommand]
-    private void NavegarARutinasProgramadas() =>
-        VistaInterior = (_rutinasProgramadas ??= new RutinasProgramadasViewModel());
+    private void NavegarARutinasProgramadas()
+    {
+        if (_rutinasProgramadas is null)
+        {
+            _rutinasProgramadas = new RutinasProgramadasViewModel(
+                _dbFactory,
+                _apiSync,
+                rutina =>
+                {
+                    // Precargar parámetros en SesionLibre y navegar a esa vista
+                    _sesionLibre.AplicarRutina(rutina);
+                    VistaInterior = _sesionLibre;
+                });
+        }
+        VistaInterior = _rutinasProgramadas;
+    }
 
     [RelayCommand]
     private void NavegarAInformes()

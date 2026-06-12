@@ -5,14 +5,106 @@
              x:DataType="vm:RutinasProgramadasViewModel"
              Background="#0D1117">
 
-    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14">
-        <TextBlock Text="📅" FontSize="52" HorizontalAlignment="Center"/>
-        <TextBlock Text="Rutinas Programadas"
-                   FontSize="22" FontWeight="Bold"
-                   Foreground="#E6EDF3" HorizontalAlignment="Center"/>
-        <TextBlock Text="Próximamente disponible"
-                   FontSize="14" Foreground="#8B949E"
-                   HorizontalAlignment="Center"/>
-    </StackPanel>
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="#161B22"
+                BorderBrush="#30363D"
+                BorderThickness="0,0,0,1"
+                Padding="28,20">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="RUTINAS PROGRAMADAS"
+                               Foreground="#8B949E" FontSize="11" FontWeight="Bold"
+                               LetterSpacing="1.5"/>
+                    <TextBlock Text="Ejercicios asignados por tu fisioterapeuta"
+                               Foreground="#E6EDF3" FontSize="20" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Content="⟳  Sincronizar"
+                        Command="{Binding DescargarRutinasCommand}"
+                        IsEnabled="{Binding !Cargando}"
+                        VerticalAlignment="Center"
+                        Classes="btn-primary"
+                        FontSize="13"
+                        Padding="16,8"/>
+            </Grid>
+        </Border>
+
+        <!-- ── Barra de estado ────────────────────────────────────────────── -->
+        <Border Grid.Row="1"
+                Background="#0D1117"
+                Padding="28,10,28,0">
+            <StackPanel Spacing="6">
+                <ProgressBar IsIndeterminate="True"
+                             IsVisible="{Binding Cargando}"
+                             Height="2"
+                             Background="#30363D"
+                             Foreground="#58A6FF"/>
+                <TextBlock Text="{Binding MensajeEstado}"
+                           Foreground="#8B949E" FontSize="13"
+                           IsVisible="{Binding MensajeEstado, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Lista de rutinas ───────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="2" Padding="28,16,28,24">
+            <ItemsControl ItemsSource="{Binding Rutinas}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RutinaItem">
+
+                        <Border Background="#161B22"
+                                BorderBrush="#30363D"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="20,16"
+                                Margin="0,0,0,12">
+                            <Grid ColumnDefinitions="*,Auto">
+
+                                <!-- Info de la rutina -->
+                                <StackPanel Grid.Column="0" Spacing="6" VerticalAlignment="Center">
+
+                                    <TextBlock Foreground="#E6EDF3"
+                                               FontSize="16" FontWeight="SemiBold">
+                                        <Run Text="Modo: "/>
+                                        <Run Text="{Binding Rutina.ModoTexto}"
+                                             Foreground="#4CC9F0"/>
+                                    </TextBlock>
+
+                                    <TextBlock Foreground="#C9D1D9" FontSize="13">
+                                        <Run Text="Objetivo: "/>
+                                        <Run Text="{Binding Rutina.RepeticionesObjetivo}"
+                                             Foreground="#58A6FF" FontWeight="Bold"/>
+                                        <Run Text=" repeticiones"/>
+                                    </TextBlock>
+
+                                    <TextBlock Foreground="#8B949E" FontSize="12">
+                                        <Run Text="Asignada el "/>
+                                        <Run Text="{Binding Rutina.FechaTexto}"/>
+                                    </TextBlock>
+
+                                </StackPanel>
+
+                                <!-- Botón de inicio -->
+                                <Button Grid.Column="1"
+                                        Content="▶  Realizar Ejercicio"
+                                        Command="{Binding IniciarCommand}"
+                                        Classes="btn-primary"
+                                        FontSize="13"
+                                        Padding="16,10"
+                                        VerticalAlignment="Center"/>
+
+                            </Grid>
+                        </Border>
+
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </Grid>
 
 </UserControl>

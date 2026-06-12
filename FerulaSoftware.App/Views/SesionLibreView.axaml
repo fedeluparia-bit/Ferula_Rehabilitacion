@@ -91,12 +91,32 @@
                                Classes="stat-label"
                                FontSize="11"/>
 
+                    <!-- Banner de rutina asignada (visible solo cuando ModosBloqueados = true) -->
+                    <Border Background="#1A1A00"
+                            BorderBrush="#F0A500"
+                            BorderThickness="0,0,0,2"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            IsVisible="{Binding ModosBloqueados}">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="RUTINA ASIGNADA"
+                                       Foreground="#F0A500"
+                                       FontSize="10" FontWeight="Bold"
+                                       LetterSpacing="1"/>
+                            <TextBlock Text="{Binding BannerRutina}"
+                                       Foreground="#C9D1D9"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Repeticiones objetivo -->
                     <StackPanel Spacing="6">
                         <TextBlock Text="Repeticiones objetivo"
                                    Foreground="#C9D1D9" FontSize="13"/>
                         <NumericUpDown Value="{Binding RepeticionesObjetivo}"
                                        Minimum="1" Maximum="99" Increment="1"
+                                       IsEnabled="{Binding !ModosBloqueados}"
                                        Background="#0D1117" Foreground="#E6EDF3"
                                        BorderBrush="#30363D" CornerRadius="5"
                                        FontSize="16" HorizontalAlignment="Stretch"/>
@@ -107,6 +127,7 @@
                         <TextBlock Text="Modo de rehabilitación"
                                    Foreground="#C9D1D9" FontSize="13"/>
                         <ComboBox SelectedIndex="{Binding ModoSeleccionado}"
+                                  IsEnabled="{Binding !ModosBloqueados}"
                                   HorizontalAlignment="Stretch"
                                   Background="#0D1117" Foreground="#E6EDF3"
                                   BorderBrush="#30363D" CornerRadius="5" FontSize="13">
