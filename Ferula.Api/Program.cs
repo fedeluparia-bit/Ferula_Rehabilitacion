@@ -49,8 +49,21 @@ if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("p
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// ── OpenAPI (Swagger UI disponible en /openapi/v1.json en desarrollo) ─────────
-builder.Services.AddOpenApi();
+// ── Swagger / OpenAPI ─────────────────────────────────────────────────────────
+// AddEndpointsApiExplorer registra los Minimal API endpoints con el sistema
+// de metadatos de ASP.NET Core para que SwaggerGen los descubra.
+// Activo en todos los entornos: el panel /swagger es parte de la demo PoC.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new()
+    {
+        Title       = "API Férula de Rehabilitación",
+        Version     = "v1",
+        Description = "REST API para el sistema de gestión clínica de la férula mecatrónica. " +
+                      "Incluye autenticación, pacientes, sesiones de telemetría, rutinas e invitaciones."
+    });
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
 // App
@@ -134,11 +147,16 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// ── OpenAPI solo en Development ───────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
+// ── Swagger UI — activo en todos los entornos (incluyendo Render.com) ────────
+// El JSON del esquema queda en /swagger/v1/swagger.json.
+// La interfaz interactiva queda en /swagger  (ruta raíz del UI).
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.MapOpenApi();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Férula v1");
+    c.RoutePrefix = "swagger";   // accesible en /swagger
+    c.DocumentTitle = "Férula de Rehabilitación — API Docs";
+});
 
 app.UseHttpsRedirection();
 
