@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FerulaSoftware.App.ViewModels"
+             x:Class="FerulaSoftware.App.Views.RutinasProgramadasView"
+             x:DataType="vm:RutinasProgramadasViewModel"
+             Background="#0D1117">
+
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14">
+        <TextBlock Text="📅" FontSize="52" HorizontalAlignment="Center"/>
+        <TextBlock Text="Rutinas Programadas"
+                   FontSize="22" FontWeight="Bold"
+                   Foreground="#E6EDF3" HorizontalAlignment="Center"/>
+        <TextBlock Text="Próximamente disponible"
+                   FontSize="14" Foreground="#8B949E"
+                   HorizontalAlignment="Center"/>
+    </StackPanel>
+
+</UserControl>

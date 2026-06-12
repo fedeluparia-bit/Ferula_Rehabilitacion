@@ -1,0 +1,94 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  .gitignore — Férula de Rehabilitación Inteligente
+#  Cubre: .NET / Avalonia, ASP.NET Core API, PlatformIO (ESP32), Docker, IDE
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── .NET — artefactos de compilación ─────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.userprefs
+
+# Resultados de pruebas y cobertura
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Publicación
+publish/
+**/publish/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+# Restauración automática de paquetes — no hace falta versionar el lock salvo
+# que el equipo lo haya adoptado explícitamente
+# package.lock.json
+
+# ── ASP.NET Core / Secrets ────────────────────────────────────────────────────
+# Configuración local — credenciales de BD, etc. Nunca al repo.
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+**/*.Development.json
+
+# User Secrets de .NET
+**/Properties/launchSettings.json
+
+# ── SQLite — base de datos local de la app Avalonia ──────────────────────────
+*.db
+*.db-shm
+*.db-wal
+
+# ── PlatformIO (Firmware ESP32) ───────────────────────────────────────────────
+Firmware/.pio/
+Firmware/.pioenvs/
+Firmware/.piolibdeps/
+
+# ── Visual Studio ─────────────────────────────────────────────────────────────
+.vs/
+*.sln.docstates
+_ReSharper*/
+*.DotSettings.user
+
+# ── JetBrains Rider ───────────────────────────────────────────────────────────
+.idea/
+*.sln.iml
+
+# ── Visual Studio Code ────────────────────────────────────────────────────────
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ── Variables de entorno / secretos ──────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+# Dockerfile y .dockerignore SÍ se versionan.
+# Excluimos solo artefactos de ejecución local de Docker:
+docker-compose.override.yml
+
+# ── Sistema operativo ─────────────────────────────────────────────────────────
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# ── Asistentes de IA ──────────────────────────────────────────────────────────
+.claude/

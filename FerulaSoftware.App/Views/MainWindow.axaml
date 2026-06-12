@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FerulaSoftware.App.ViewModels"
+        x:Class="FerulaSoftware.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Férula de Rehabilitación Inteligente — Control"
+        MinWidth="1100" MinHeight="650"
+        Background="#0D1117">
+
+    <!--
+        Shell de navegación: el ViewLocator (App.axaml) resuelve automáticamente
+        VistaActual → LoginView | DashboardView según el tipo del ViewModel.
+    -->
+    <ContentControl Content="{Binding VistaActual}"/>
+
+</Window>

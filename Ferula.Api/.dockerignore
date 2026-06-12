@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Configuración local — en producción las credenciales vienen de DATABASE_URL
+appsettings.Development.json
+Properties/launchSettings.json

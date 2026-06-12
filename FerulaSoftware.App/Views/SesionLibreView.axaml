@@ -1,0 +1,245 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FerulaSoftware.App.ViewModels"
+             xmlns:conv="using:FerulaSoftware.App.Converters"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="FerulaSoftware.App.Views.SesionLibreView"
+             x:DataType="vm:SesionLibreViewModel"
+             Background="#0D1117">
+
+    <UserControl.Resources>
+        <conv:BoolToColorConverter x:Key="ConnectionColor"/>
+    </UserControl.Resources>
+
+    <DockPanel LastChildFill="True">
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- TOP — Barra de conexión                                           -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <Border DockPanel.Dock="Top"
+                Background="#161B22"
+                BorderBrush="#30363D"
+                BorderThickness="0,0,0,1"
+                Padding="20,10">
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+
+                <TextBlock Text="ESP32 WebSocket"
+                           Foreground="#8B949E"
+                           VerticalAlignment="Center"
+                           FontSize="13"/>
+
+                <TextBox Text="{Binding WsUri}"
+                         Width="300"
+                         VerticalAlignment="Center"
+                         Background="#0D1117"
+                         Foreground="#C9D1D9"
+                         BorderBrush="#30363D"
+                         CornerRadius="5"
+                         Padding="8,6"
+                         FontFamily="Consolas,Menlo,monospace"
+                         FontSize="13"/>
+
+                <Button Content="Conectar"
+                        Command="{Binding ConectarCommand}"
+                        Classes="btn-primary"
+                        Width="110"
+                        Padding="0,8"/>
+
+                <Border Width="12" Height="12"
+                        CornerRadius="6"
+                        VerticalAlignment="Center"
+                        Background="{Binding EstaConectado, Converter={StaticResource ConnectionColor}}"/>
+
+                <TextBlock Text="{Binding EstadoConexionTexto}"
+                           VerticalAlignment="Center"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Foreground="{Binding EstaConectado, Converter={StaticResource ConnectionColor}}"/>
+
+                <TextBlock Text="" HorizontalAlignment="Stretch"/>
+
+                <TextBlock VerticalAlignment="Center" Foreground="#8B949E" FontSize="12">
+                    <Run Text="Estado: "/>
+                    <Run Text="{Binding EstadoSistema}"/>
+                </TextBlock>
+
+                <TextBlock Text="{Binding ErrorConexion}"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           FontFamily="Consolas,Menlo,monospace"
+                           Foreground="#E63946"
+                           TextWrapping="NoWrap"
+                           IsVisible="{Binding ErrorConexion,
+                               Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+            </StackPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- MAIN — Panel izquierdo (Control) + Panel derecho (Telemetría)     -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <Grid ColumnDefinitions="280,*">
+
+            <!-- ── COLUMNA IZQUIERDA: Panel de control ────────────────────── -->
+            <Border Grid.Column="0"
+                    Background="#161B22"
+                    BorderBrush="#30363D"
+                    BorderThickness="0,0,1,0">
+                <StackPanel Margin="20,24,20,20" Spacing="20">
+
+                    <TextBlock Text="CONTROL DE SESIÓN"
+                               Classes="stat-label"
+                               FontSize="11"/>
+
+                    <!-- Repeticiones objetivo -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Repeticiones objetivo"
+                                   Foreground="#C9D1D9" FontSize="13"/>
+                        <NumericUpDown Value="{Binding RepeticionesObjetivo}"
+                                       Minimum="1" Maximum="99" Increment="1"
+                                       Background="#0D1117" Foreground="#E6EDF3"
+                                       BorderBrush="#30363D" CornerRadius="5"
+                                       FontSize="16" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+
+                    <!-- Modo de rehabilitación -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Modo de rehabilitación"
+                                   Foreground="#C9D1D9" FontSize="13"/>
+                        <ComboBox SelectedIndex="{Binding ModoSeleccionado}"
+                                  HorizontalAlignment="Stretch"
+                                  Background="#0D1117" Foreground="#E6EDF3"
+                                  BorderBrush="#30363D" CornerRadius="5" FontSize="13">
+                            <ComboBoxItem Content="0 — Resistencia (activo-asistido)"/>
+                            <ComboBoxItem Content="1 — Asistido (pasivo continuo)"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Modo activo reportado por ESP32 -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Modo activo (ESP32)"
+                                   Foreground="#8B949E" FontSize="11"/>
+                        <TextBlock Foreground="#4CC9F0" FontSize="13" FontWeight="SemiBold">
+                            <Run Text="{Binding ModoActivo}"/>
+                            <Run Text=" (0=Resistencia  1=Asistido)"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <Separator Background="#30363D" Height="1"/>
+
+                    <Button Content="▶   Iniciar Rutina"
+                            Command="{Binding IniciarRutinaCommand}"
+                            CommandParameter="{Binding RepeticionesObjetivo}"
+                            Classes="btn-primary" FontSize="15"/>
+
+                    <Button Content="⏸   Detener"
+                            Command="{Binding StopCommand}"
+                            Classes="btn-secondary" FontSize="14"/>
+
+                    <Separator Background="#30363D" Height="1"/>
+
+                    <Button Content="🛑   E-STOP"
+                            Command="{Binding EStopCommand}"
+                            Classes="btn-estop"/>
+
+                    <TextBlock Text="Congela los motores en la posición actual."
+                               Foreground="#6E7681" FontSize="11"
+                               TextWrapping="Wrap" HorizontalAlignment="Center"/>
+
+                    <Separator Background="#30363D" Height="1"/>
+
+                    <!-- Slider simulador de presión FSR -->
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="SIMULAR PRESIÓN FSR" Classes="stat-label"/>
+                            <TextBlock Text="{Binding PresionSimuladaSlider, StringFormat='{}{0} ADC'}"
+                                       FontSize="10" FontWeight="SemiBold" Foreground="#F0A500"/>
+                        </StackPanel>
+                        <Slider Minimum="0" Maximum="4000"
+                                Value="{Binding PresionSimuladaSlider}"
+                                TickFrequency="100" IsSnapToTickEnabled="True"
+                                HorizontalAlignment="Stretch"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="0" Foreground="#6E7681" FontSize="10"/>
+                            <TextBlock Text="4000" Foreground="#6E7681" FontSize="10"
+                                       Width="220" TextAlignment="Right"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ── COLUMNA DERECHA: Telemetría + Gráfica ─────────────────── -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
+
+                <!-- Tarjetas de estadísticas -->
+                <Border Grid.Row="0"
+                        Background="#0D1117"
+                        BorderBrush="#30363D"
+                        BorderThickness="0,0,0,1"
+                        Padding="20,16">
+                    <WrapPanel Orientation="Horizontal">
+
+                        <Border Classes="stat-card" MinWidth="160">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="REPETICIONES" Classes="stat-label"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Classes="stat-value" Text="{Binding RepeticionesHechas}"/>
+                                    <TextBlock Text=" / " FontSize="22" Foreground="#6E7681"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,3"/>
+                                    <TextBlock FontSize="22" Foreground="#6E7681"
+                                               Text="{Binding RepeticionesObjetivo}"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,3"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="stat-card" MinWidth="180">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="PRESIÓN MÁXIMA (ADC)" Classes="stat-label"/>
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Classes="stat-value" Text="{Binding PresionMaxima}"/>
+                                    <TextBlock Text="/ 4095" Foreground="#6E7681" FontSize="14"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="stat-card" MinWidth="170">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="MOTOR 0 — ÍNDICE/MEDIO" Classes="stat-label"/>
+                                <TextBlock Classes="stat-value" Foreground="#4CC9F0"
+                                           Text="{Binding AnguloMotor0, StringFormat='{}{0}°'}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="stat-card" MinWidth="170">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="MOTOR 1 — ANULAR/MEÑIQUE" Classes="stat-label"/>
+                                <TextBlock Classes="stat-value" Foreground="#F0A500"
+                                           Text="{Binding AnguloMotor1, StringFormat='{}{0}°'}"/>
+                            </StackPanel>
+                        </Border>
+
+                    </WrapPanel>
+                </Border>
+
+                <!-- Gráfica LiveCharts2 -->
+                <Border Grid.Row="1" Background="#0D1117" Padding="20,16">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Grid.Row="0"
+                                   Text="PRESIÓN FSR402 — TIEMPO REAL (ventana 10 s)"
+                                   Classes="stat-label" Margin="0,0,0,12"/>
+                        <lvc:CartesianChart Grid.Row="1"
+                                            Series="{Binding SeriesPresion}"
+                                            YAxes="{Binding YAxesPresion}"
+                                            ZoomMode="X"
+                                            Background="Transparent"/>
+                    </Grid>
+                </Border>
+
+            </Grid>
+        </Grid>
+
+    </DockPanel>
+</UserControl>

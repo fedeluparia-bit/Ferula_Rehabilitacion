@@ -1,0 +1,287 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FerulaSoftware.App.ViewModels"
+             xmlns:models="using:FerulaSoftware.App.Models"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="FerulaSoftware.App.Views.VerInformesView"
+             x:DataType="vm:VerInformesViewModel"
+             Background="#0D1117">
+
+    <Grid ColumnDefinitions="300,*">
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- COLUMNA IZQUIERDA — Lista de sesiones históricas                  -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Column="0"
+                Background="#161B22"
+                BorderBrush="#30363D"
+                BorderThickness="0,0,1,0">
+            <DockPanel>
+
+                <!-- Cabecera + botón actualizar -->
+                <Border DockPanel.Dock="Top"
+                        Padding="16,16,16,12"
+                        BorderBrush="#30363D"
+                        BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="HISTORIAL DE SESIONES"
+                                   Classes="stat-label"/>
+                        <Button Content="↻   Actualizar"
+                                Command="{Binding CargarSesionesCommand}"
+                                Classes="btn-secondary"
+                                FontSize="12"
+                                Padding="0,8"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Lista -->
+                <ListBox Background="Transparent"
+                         ItemsSource="{Binding SesionesHistoricas}"
+                         SelectedItem="{Binding SesionSeleccionada, Mode=TwoWay}"
+                         Margin="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:Sesion">
+                            <Border Padding="14,10"
+                                    BorderBrush="#30363D"
+                                    BorderThickness="0,0,0,1">
+                                <StackPanel Spacing="4">
+
+                                    <!-- Fecha y hora -->
+                                    <TextBlock Text="{Binding FechaHora, StringFormat='{}{0:dd/MM/yyyy  HH:mm}'}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#E6EDF3"/>
+
+                                    <!-- Repeticiones -->
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Reps:" Foreground="#8B949E" FontSize="11"/>
+                                        <TextBlock Foreground="#4CC9F0" FontSize="11" FontWeight="SemiBold">
+                                            <Run Text="{Binding RepeticionesHechas}"/>
+                                            <Run Text=" / "/>
+                                            <Run Text="{Binding RepeticionesObjetivo}"/>
+                                        </TextBlock>
+                                        <TextBlock Text=" | " Foreground="#30363D" FontSize="11"/>
+                                        <TextBlock Text="Prs:" Foreground="#8B949E" FontSize="11"/>
+                                        <TextBlock Text="{Binding PresionMaxima}"
+                                                   Foreground="#F0A500"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"/>
+                                    </StackPanel>
+
+                                    <!-- Modo -->
+                                    <TextBlock Foreground="#6E7681" FontSize="10">
+                                        <Run Text="Modo: "/>
+                                        <Run Text="{Binding ModoActivo}"/>
+                                    </TextBlock>
+
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- COLUMNA DERECHA — Panel de análisis                               -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Column="1">
+
+            <!-- Placeholder: ninguna sesión seleccionada -->
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Spacing="12"
+                        IsVisible="{Binding HayDatos,
+                            Converter={x:Static BoolConverters.Not}}">
+                <TextBlock Text="📊"
+                           FontSize="52"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Selecciona una sesión del historial"
+                           FontSize="16"
+                           Foreground="#8B949E"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Los datos de presión y ángulo se reconstruirán aquí."
+                           FontSize="12"
+                           Foreground="#6E7681"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Indicador de carga (overlay, encima de todo) -->
+            <Border IsVisible="{Binding Cargando}"
+                    Background="#CC161B22"
+                    CornerRadius="8"
+                    Padding="24,14"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <TextBlock Text="⏳   Cargando datos de sesión..."
+                           Foreground="#E6EDF3"
+                           FontSize="14"
+                           FontWeight="SemiBold"/>
+            </Border>
+
+            <!-- Panel de análisis (visible cuando hay datos y no está cargando) -->
+            <ScrollViewer IsVisible="{Binding HayDatos}"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="24,20,24,24" Spacing="20">
+
+                    <!-- ── Cabecera de la sesión + acciones ─────────────────── -->
+                    <Grid ColumnDefinitions="*,Auto">
+
+                        <!-- Info de la sesión seleccionada -->
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="ANÁLISIS DE SESIÓN" Classes="stat-label"/>
+                            <TextBlock Text="{Binding SesionSeleccionada.FechaHora,
+                                                      StringFormat='{}{0:dddd dd/MM/yyyy  HH:mm}'}"
+                                       Foreground="#E6EDF3"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding ModoTextoSeleccionado}"
+                                       Foreground="#4CC9F0"
+                                       FontSize="12"/>
+                        </StackPanel>
+
+                        <!-- Panel de acciones: botones + mensaje de estado -->
+                        <StackPanel Grid.Column="1"
+                                    Spacing="8"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Right">
+
+                            <!-- Fila de botones -->
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+
+                                <!-- Subir a la Nube -->
+                                <Button Content="☁️   Subir a la Nube"
+                                        Command="{Binding SincronizarNubeCommand}"
+                                        IsEnabled="{Binding HayDatos}"
+                                        Classes="btn-secondary"
+                                        FontSize="13"
+                                        Width="170"
+                                        Padding="0,10"/>
+
+                                <!-- Exportar a PDF -->
+                                <Button Content="📄   Exportar a PDF"
+                                        Command="{Binding ExportarPdfCommand}"
+                                        IsEnabled="{Binding HayDatos}"
+                                        Classes="btn-primary"
+                                        FontSize="13"
+                                        Width="170"
+                                        Padding="0,10"/>
+
+                            </StackPanel>
+
+                            <!-- Mensaje de estado de sincronización (auto-desaparece a los 5 s) -->
+                            <TextBlock Text="{Binding MensajeEstado}"
+                                       Foreground="{Binding MensajeColor}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       IsVisible="{Binding MensajeEstado,
+                                           Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ── Tarjetas de resumen ───────────────────────────────── -->
+                    <WrapPanel Orientation="Horizontal">
+
+                        <!-- Duración -->
+                        <Border Classes="stat-card" MinWidth="160">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="DURACIÓN" Classes="stat-label"/>
+                                <TextBlock Text="{Binding DuracionTotal}"
+                                           Classes="stat-value"
+                                           Foreground="#4CC9F0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Presión Máxima -->
+                        <Border Classes="stat-card" MinWidth="180">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="PRESIÓN MÁXIMA (ADC)" Classes="stat-label"/>
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding PresionMaximaSesion}"
+                                               Classes="stat-value"/>
+                                    <TextBlock Text="/ 4095"
+                                               Foreground="#6E7681"
+                                               FontSize="14"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,5"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- % Éxito -->
+                        <Border Classes="stat-card" MinWidth="160">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="ÉXITO DE RUTINA" Classes="stat-label"/>
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding PorcentajeExito}"
+                                               Classes="stat-value"
+                                               Foreground="#06D6A0"/>
+                                    <TextBlock Text="{Binding SesionSeleccionada.RepeticionesHechas}"
+                                               Foreground="#6E7681"
+                                               FontSize="14"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,5"/>
+                                    <TextBlock Text="/"
+                                               Foreground="#6E7681"
+                                               FontSize="14"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,5"/>
+                                    <TextBlock Text="{Binding SesionSeleccionada.RepeticionesObjetivo}"
+                                               Foreground="#6E7681"
+                                               FontSize="14"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,5"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                    </WrapPanel>
+
+                    <!-- ── Gráfica: Presión FSR ──────────────────────────────── -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="PRESIÓN FSR402 — RECONSTRUCCIÓN DE SESIÓN"
+                                   Classes="stat-label"/>
+                        <Border Background="#161B22"
+                                BorderBrush="#30363D"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="8">
+                            <lvc:CartesianChart Height="200"
+                                                Series="{Binding SeriesPresion}"
+                                                YAxes="{Binding YAxesPresion}"
+                                                XAxes="{Binding XAxesTiempo}"
+                                                ZoomMode="X"
+                                                Background="Transparent"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ── Gráfica: Ángulo de motores ────────────────────────── -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="ÁNGULO DE MOTORES — RECONSTRUCCIÓN DE SESIÓN"
+                                   Classes="stat-label"/>
+                        <Border Background="#161B22"
+                                BorderBrush="#30363D"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="8">
+                            <lvc:CartesianChart Height="200"
+                                                Series="{Binding SeriesAngulo}"
+                                                YAxes="{Binding YAxesAngulo}"
+                                                XAxes="{Binding XAxesTiempo}"
+                                                ZoomMode="X"
+                                                Background="Transparent"/>
+                        </Border>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

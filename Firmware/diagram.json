@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "author": "Ferula Software PoC",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "id": "esp",
+      "type": "board-esp32-devkit-v1",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "id": "servo0",
+      "type": "wokwi-servo",
+      "top": -120,
+      "left": 220,
+      "attrs": { "label": "Motor 0 — Índice/Medio" }
+    },
+    {
+      "id": "servo1",
+      "type": "wokwi-servo",
+      "top": 20,
+      "left": 220,
+      "attrs": { "label": "Motor 1 — Anular/Meñique" }
+    },
+    {
+      "id": "pot0",
+      "type": "wokwi-slide-potentiometer",
+      "top": 160,
+      "left": 220,
+      "attrs": { "label": "FSR402 sim — Motor 0" }
+    },
+    {
+      "id": "pot1",
+      "type": "wokwi-slide-potentiometer",
+      "top": 260,
+      "left": 220,
+      "attrs": { "label": "FSR402 sim — Motor 1" }
+    }
+  ],
+  "connections": [
+    ["esp:GND.1",  "servo0:GND", "black",  []],
+    ["esp:GND.1",  "servo1:GND", "black",  []],
+    ["esp:GND.1",  "pot0:GND",   "black",  []],
+    ["esp:GND.1",  "pot1:GND",   "black",  []],
+
+    ["esp:3V3",    "servo0:V+",  "red",    []],
+    ["esp:3V3",    "servo1:V+",  "red",    []],
+    ["esp:3V3",    "pot0:VCC",   "red",    []],
+    ["esp:3V3",    "pot1:VCC",   "red",    []],
+
+    ["esp:GPIO18", "servo0:PWM", "orange", []],
+    ["esp:GPIO19", "servo1:PWM", "yellow", []],
+
+    ["esp:GPIO32", "pot0:SIG",   "green",  []],
+    ["esp:GPIO33", "pot1:SIG",   "blue",   []]
+  ],
+  "dependencies": {}
+}

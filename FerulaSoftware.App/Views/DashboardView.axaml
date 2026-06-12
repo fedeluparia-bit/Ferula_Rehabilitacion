@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FerulaSoftware.App.ViewModels"
+             x:Class="FerulaSoftware.App.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel"
+             Background="#0D1117">
+
+    <Grid ColumnDefinitions="210,*">
+
+        <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+        <Border Grid.Column="0"
+                Background="#161B22"
+                BorderBrush="#30363D"
+                BorderThickness="0,0,1,0">
+            <DockPanel>
+
+                <!-- Cabecera de la app -->
+                <Border DockPanel.Dock="Top"
+                        Padding="16,20,16,16"
+                        BorderBrush="#30363D"
+                        BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="🦾  Férula PoC"
+                                   FontSize="15" FontWeight="Bold"
+                                   Foreground="#E6EDF3"/>
+                        <TextBlock Text="Panel de Control"
+                                   FontSize="11" Foreground="#8B949E"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Botón Cerrar Sesión anclado al fondo -->
+                <Button DockPanel.Dock="Bottom"
+                        Content="↩   Cerrar Sesión"
+                        Command="{Binding LogoutCommand}"
+                        Classes="nav-btn"
+                        Foreground="#E63946"
+                        Margin="8,8,8,12"/>
+
+                <!-- Ítems de navegación -->
+                <StackPanel Margin="8,16,8,0" Spacing="2">
+                    <TextBlock Text="NAVEGACIÓN"
+                               Classes="stat-label"
+                               Margin="12,0,0,8"/>
+                    <Button Content="📋   Sesión Libre"
+                            Command="{Binding NavegarASesionLibreCommand}"
+                            Classes="nav-btn"/>
+                    <Button Content="📅   Rutinas Programadas"
+                            Command="{Binding NavegarARutinasProgramadasCommand}"
+                            Classes="nav-btn"/>
+                    <Button Content="📊   Ver Informes"
+                            Command="{Binding NavegarAInformesCommand}"
+                            Classes="nav-btn"/>
+                </StackPanel>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ── CONTENIDO INTERIOR ───────────────────────────────────────────── -->
+        <!-- El ViewLocator resuelve VistaInterior a su UserControl correspondiente -->
+        <ContentControl Grid.Column="1"
+                        Content="{Binding VistaInterior}"/>
+
+    </Grid>
+
+</UserControl>
