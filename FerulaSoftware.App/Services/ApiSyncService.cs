@@ -165,11 +165,15 @@ public sealed class ApiSyncService : IDisposable
     /// Crea o devuelve el usuario en la nube identificado por Nombre+Apellido.
     /// Actualiza <c>EsTerapeuta</c> si cambió. Devuelve el ID de PostgreSQL.
     /// </summary>
-    public async Task<int?> SincronizarUsuarioAsync(string nombre, string apellido, bool esTerapeuta = false)
+    public async Task<int?> SincronizarUsuarioAsync(
+        string  nombre,
+        string  apellido,
+        bool    esTerapeuta = false,
+        string? email       = null)
     {
         try
         {
-            var payload = new { nombre, apellido, esTerapeuta };
+            var payload = new { nombre, apellido, esTerapeuta, email };
             var json    = JsonSerializer.Serialize(payload, JsonOpts);
             using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
@@ -216,13 +220,15 @@ public sealed class ApiSyncService : IDisposable
     // ── Invitaciones ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Envía una invitación de rutina a otro usuario (<c>POST /api/invitaciones</c>).
+    /// Envía una invitación de rutina buscando al destinatario por email exacto.
+    /// Retorna <c>(true, false)</c> en éxito, <c>(false, true)</c> si el email no está
+    /// registrado (404) y <c>(false, false)</c> ante cualquier otro error.
     /// </summary>
-    public async Task<bool> EnviarInvitacionAsync(
+    public async Task<(bool Success, bool DestinatarioNoEncontrado)> EnviarInvitacionAsync(
         int    remitenteId,
-        int    destinatarioId,
         string remitenteNombre,
         bool   remitenteEsTerapeuta,
+        string emailDestinatario,
         int    modoActivo,
         int    repeticionesObjetivo)
     {
@@ -231,9 +237,9 @@ public sealed class ApiSyncService : IDisposable
             var payload = new
             {
                 remitenteId,
-                destinatarioId,
                 remitenteNombre,
                 remitenteEsTerapeuta,
+                emailDestinatario,
                 modoActivo,
                 repeticionesObjetivo
             };
@@ -241,15 +247,19 @@ public sealed class ApiSyncService : IDisposable
             using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
             var response = await _http.PostAsync("/api/invitaciones", content);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return (false, true);
+
             if (!response.IsSuccessStatusCode)
                 Debug.WriteLine($"[ApiSync] POST /api/invitaciones → HTTP {(int)response.StatusCode}");
 
-            return response.IsSuccessStatusCode;
+            return (response.IsSuccessStatusCode, false);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[ApiSync] EnviarInvitacionAsync: {ex.GetType().Name}: {ex.Message}");
-            return false;
+            return (false, false);
         }
     }
 

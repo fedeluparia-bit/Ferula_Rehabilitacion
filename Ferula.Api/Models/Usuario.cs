@@ -17,6 +17,9 @@ public class Usuario
     /// <summary>True para fisioterapeutas verificados; false para pacientes regulares.</summary>
     public bool EsTerapeuta { get; set; }
 
+    [MaxLength(200)]
+    public string? Email { get; set; }
+
     // Navegación
     public ICollection<InvitacionRutina> InvitacionesEnviadas   { get; set; } = [];
     public ICollection<InvitacionRutina> InvitacionesRecibidas  { get; set; } = [];

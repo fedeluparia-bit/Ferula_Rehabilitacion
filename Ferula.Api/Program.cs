@@ -101,6 +101,13 @@ using (var scope = app.Services.CreateScope())
                 ON "InvitacionesRutina" ("DestinatarioId", "Estado");
             """);
 
+        // Columna Email agregada en fase de invitaciones por correo electrónico.
+        await db.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE "Usuarios" ADD COLUMN IF NOT EXISTS "Email" VARCHAR(200);
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_Usuarios_Email"
+                ON "Usuarios" ("Email") WHERE "Email" IS NOT NULL;
+            """);
+
         logger.LogInformation("Esquema de base de datos verificado correctamente.");
     }
     catch (Exception ex)
@@ -345,11 +352,18 @@ app.MapPost("/api/usuarios", async (Usuario usuario, AppDbContext db) =>
 
     if (existente is not null)
     {
+        bool cambio = false;
         if (existente.EsTerapeuta != usuario.EsTerapeuta)
         {
             existente.EsTerapeuta = usuario.EsTerapeuta;
-            await db.SaveChangesAsync();
+            cambio = true;
         }
+        if (!string.IsNullOrWhiteSpace(usuario.Email) && existente.Email != usuario.Email)
+        {
+            existente.Email = usuario.Email;
+            cambio = true;
+        }
+        if (cambio) await db.SaveChangesAsync();
         return Results.Ok(new { id = existente.Id, esTerapeuta = existente.EsTerapeuta });
     }
 
@@ -391,13 +405,26 @@ app.MapGet("/api/usuarios", async (string? nombre, AppDbContext db) =>
 // │ POST /api/invitaciones
 // │ Crea una invitación de rutina entre dos usuarios.
 // └─────────────────────────────────────────────────────────────────────────────
-app.MapPost("/api/invitaciones", async (InvitacionRutina inv, AppDbContext db) =>
+app.MapPost("/api/invitaciones", async (CrearInvitacionDto dto, AppDbContext db) =>
 {
-    inv.Id     = 0;
-    inv.Estado = "Pendiente";
-    inv.FechaEnvio = DateTime.SpecifyKind(
-        inv.FechaEnvio == default ? DateTime.UtcNow : inv.FechaEnvio,
-        DateTimeKind.Utc);
+    // Búsqueda estricta por correo — privacidad clínica garantizada.
+    var destinatario = await db.Usuarios
+        .FirstOrDefaultAsync(u => u.Email == dto.EmailDestinatario);
+
+    if (destinatario is null)
+        return Results.NotFound(new { mensaje = "No se encontró ningún usuario con ese correo electrónico." });
+
+    var inv = new InvitacionRutina
+    {
+        RemitenteId          = dto.RemitenteId,
+        DestinatarioId       = destinatario.Id,
+        RemitenteNombre      = dto.RemitenteNombre,
+        RemitenteEsTerapeuta = dto.RemitenteEsTerapeuta,
+        ModoActivo           = dto.ModoActivo,
+        RepeticionesObjetivo = dto.RepeticionesObjetivo,
+        Estado               = "Pendiente",
+        FechaEnvio           = DateTime.UtcNow
+    };
 
     db.InvitacionesRutina.Add(inv);
     await db.SaveChangesAsync();
@@ -479,3 +506,10 @@ app.Run();
 
 // ─── Declaraciones de tipos (deben ir después del último top-level statement) ──
 record ResponderInvitacionDto(bool Aceptada, int? PacienteId = null);
+record CrearInvitacionDto(
+    int    RemitenteId,
+    string RemitenteNombre,
+    bool   RemitenteEsTerapeuta,
+    string EmailDestinatario,
+    int    ModoActivo,
+    int    RepeticionesObjetivo);

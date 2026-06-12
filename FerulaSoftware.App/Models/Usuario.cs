@@ -10,7 +10,8 @@ public class Usuario
     public int    Id           { get; set; }
     public string Nombre       { get; set; } = string.Empty;
     public string Apellido     { get; set; } = string.Empty;
-    public bool   EsTerapeuta  { get; set; }
+    public bool    EsTerapeuta  { get; set; }
+    public string? Email        { get; set; }
 
     public string NombreCompleto => $"{Nombre} {Apellido}".Trim();
 }
