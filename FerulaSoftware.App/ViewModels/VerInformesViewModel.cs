@@ -34,6 +34,17 @@ public sealed partial class VerInformesViewModel : ViewModelBase
     private readonly Func<AppDbContext> _dbFactory;
     private readonly ApiSyncService     _apiSync;
 
+    // ── Modo terapeuta (inmutable tras construcción) ──────────────────────────
+    // true  → repositorio nube  (API REST): selector de paciente + GET sesiones/detalles
+    // false → repositorio local (SQLite EF Core): comportamiento original
+    public bool ModoTerapeuta { get; }
+
+    // ── Lista de pacientes cloud (solo se puebla en modo terapeuta) ───────────
+    public ObservableCollection<Paciente> PacientesCloud { get; } = [];
+
+    // ── Paciente seleccionado por el terapeuta ────────────────────────────────
+    [ObservableProperty] private Paciente? _pacienteCloudSeleccionado;
+
     // ── Lista de sesiones ─────────────────────────────────────────────────────
     public ObservableCollection<Sesion> SesionesHistoricas { get; } = [];
 
@@ -85,42 +96,82 @@ public sealed partial class VerInformesViewModel : ViewModelBase
 
     public VerInformesViewModel(Func<AppDbContext> dbFactory, ApiSyncService apiSync)
     {
-        _dbFactory = dbFactory;
-        _apiSync   = apiSync;
+        _dbFactory    = dbFactory;
+        _apiSync      = apiSync;
+        ModoTerapeuta = ApiSyncService.UsuarioActual?.EsTerapeuta ?? false;
     }
 
-    // ── Callback al cambiar selección ─────────────────────────────────────────
+    // ── Callbacks al cambiar selección ────────────────────────────────────────
 
     partial void OnSesionSeleccionadaChanged(Sesion? value) =>
         _ = CargarTelemetriaAsync(value);
 
+    // Al cambiar el paciente seleccionado (modo terapeuta), carga sus sesiones.
+    partial void OnPacienteCloudSeleccionadoChanged(Paciente? value) =>
+        _ = CargarSesionesPorPacienteCloudAsync(value);
+
     // ── Comandos ──────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Carga el historial de sesiones de la BD, ordenadas de más reciente a más antigua.
-    /// Llamado por DashboardViewModel al navegar a esta vista y desde el botón Actualizar.
+    /// Punto de entrada para cargar datos iniciales del historial.
+    ///
+    /// Modo terapeuta  → descarga la lista de pacientes de la nube para el selector.
+    ///                   Las sesiones se cargan en <see cref="CargarSesionesPorPacienteCloudAsync"/>
+    ///                   cuando el terapeuta elige un paciente en el ComboBox.
+    /// Modo paciente   → lee las sesiones propias de SQLite local (comportamiento original).
     /// </summary>
     [RelayCommand]
     public async Task CargarSesionesAsync()
     {
         try
         {
-            var lista = await Task.Run(async () =>
+            if (ModoTerapeuta)
             {
-                await using var db = _dbFactory();
-                return await db.Sesiones
-                    .OrderByDescending(s => s.FechaHora)
-                    .ToListAsync();
-            });
+                var pacientes = await _apiSync.ObtenerPacientesAsync();
+                PacientesCloud.Clear();
+                foreach (var p in pacientes)
+                    PacientesCloud.Add(p);
+            }
+            else
+            {
+                var lista = await Task.Run(async () =>
+                {
+                    await using var db = _dbFactory();
+                    return await db.Sesiones
+                        .OrderByDescending(s => s.FechaHora)
+                        .ToListAsync();
+                });
 
-            // Continuación en UI thread (SynchronizationContext de Avalonia capturado)
-            SesionesHistoricas.Clear();
-            foreach (var s in lista)
+                SesionesHistoricas.Clear();
+                foreach (var s in lista)
+                    SesionesHistoricas.Add(s);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[DB/API] CargarSesiones: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Carga las sesiones del paciente seleccionado desde la nube (solo modo terapeuta).
+    /// </summary>
+    private async Task CargarSesionesPorPacienteCloudAsync(Paciente? paciente)
+    {
+        SesionesHistoricas.Clear();
+        LimpiarGraficas();
+
+        if (paciente is null) return;
+
+        try
+        {
+            var sesiones = await _apiSync.ObtenerHistorialPacienteAsync(paciente.Id);
+            foreach (var s in sesiones)
                 SesionesHistoricas.Add(s);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[DB] CargarSesiones: {ex.Message}");
+            Debug.WriteLine($"[API] CargarSesionesPorPacienteCloud: {ex.Message}");
         }
     }
 
@@ -144,15 +195,23 @@ public sealed partial class VerInformesViewModel : ViewModelBase
         Cargando = true;
         try
         {
-            // Query OFF UI thread — devuelve lista ya materializada
-            var detalles = await Task.Run(async () =>
+            // Bifurcación repositorio: nube (terapeuta) vs. SQLite local (paciente)
+            List<DetalleTelemetria> detalles;
+            if (ModoTerapeuta)
             {
-                await using var db = _dbFactory();
-                return await db.DetallesTelemetria
-                    .Where(d => d.SesionId == sesion.Id)
-                    .OrderBy(d => d.Milisegundo)
-                    .ToListAsync();
-            });
+                detalles = await _apiSync.ObtenerDetallesSesionAsync(sesion.Id);
+            }
+            else
+            {
+                detalles = await Task.Run(async () =>
+                {
+                    await using var db = _dbFactory();
+                    return await db.DetallesTelemetria
+                        .Where(d => d.SesionId == sesion.Id)
+                        .OrderBy(d => d.Milisegundo)
+                        .ToListAsync();
+                });
+            }
 
             // Guardar copia cruda para la exportación PDF
             _detallesCargados = detalles;
