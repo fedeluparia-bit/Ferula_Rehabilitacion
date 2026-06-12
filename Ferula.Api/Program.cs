@@ -137,25 +137,23 @@ app.UseHttpsRedirection();
 // └─────────────────────────────────────────────────────────────────────────────
 app.MapGet("/api/status", async (AppDbContext db) =>
 {
+    string dbStatus;
     try
     {
-        var conectado = await db.Database.CanConnectAsync();
-        return Results.Ok(new
-        {
-            status    = "online",
-            db        = conectado ? "ok" : "unreachable",
-            timestamp = DateTime.UtcNow
-        });
+        // ExecuteSqlRaw lanza excepción con mensaje detallado; CanConnectAsync solo retorna bool.
+        await db.Database.ExecuteSqlRawAsync("SELECT 1");
+        dbStatus = "ok";
     }
     catch (Exception ex)
     {
-        return Results.Ok(new
-        {
-            status    = "online",
-            db        = $"error: {ex.Message}",
-            timestamp = DateTime.UtcNow
-        });
+        dbStatus = $"error: {ex.GetType().Name}: {ex.Message}";
     }
+    return Results.Ok(new
+    {
+        status    = "online",
+        db        = dbStatus,
+        timestamp = DateTime.UtcNow
+    });
 })
 .WithName("GetStatus")
 .WithTags("Health");
