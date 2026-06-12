@@ -22,6 +22,13 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     private VerInformesViewModel?         _verInformes;
     private BandejaEntradaViewModel?      _bandejaEntrada;
     private CompartirRutinaViewModel?     _compartirRutina;
+    private PerfilViewModel?              _perfil;
+
+    // ── Datos del usuario para el sidebar ────────────────────────────────────
+    public string NombreUsuario =>
+        ApiSyncService.UsuarioActual is { } u
+            ? $"{u.Nombre} {u.Apellido}".Trim()
+            : "Invitado";
 
     [ObservableProperty] private ViewModelBase _vistaInterior;
 
@@ -98,6 +105,13 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     {
         _compartirRutina ??= new CompartirRutinaViewModel(_dbFactory, _apiSync);
         VistaInterior = _compartirRutina;
+    }
+
+    [RelayCommand]
+    private void NavegarAPerfil()
+    {
+        _perfil ??= new PerfilViewModel(_onLogout);
+        VistaInterior = _perfil;
     }
 
     [RelayCommand]

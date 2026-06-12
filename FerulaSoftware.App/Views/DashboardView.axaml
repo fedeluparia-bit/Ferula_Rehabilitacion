@@ -14,17 +14,30 @@
                 BorderThickness="0,0,1,0">
             <DockPanel>
 
-                <!-- Cabecera de la app -->
+                <!-- Cabecera de la app + usuario logueado -->
                 <Border DockPanel.Dock="Top"
-                        Padding="16,20,16,16"
+                        Padding="16,16,16,14"
                         BorderBrush="#30363D"
                         BorderThickness="0,0,0,1">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="🦾  Férula PoC"
-                                   FontSize="15" FontWeight="Bold"
-                                   Foreground="#E6EDF3"/>
-                        <TextBlock Text="Panel de Control"
-                                   FontSize="11" Foreground="#8B949E"/>
+                    <StackPanel Spacing="6">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="🦾  Férula PoC"
+                                       FontSize="15" FontWeight="Bold"
+                                       Foreground="#E6EDF3"/>
+                            <TextBlock Text="Panel de Control"
+                                       FontSize="11" Foreground="#8B949E"/>
+                        </StackPanel>
+                        <!-- Chip del usuario logueado -->
+                        <Border Background="#21262D"
+                                BorderBrush="#30363D"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="8,5">
+                            <TextBlock Text="{Binding NombreUsuario}"
+                                       Foreground="#C9D1D9"
+                                       FontSize="11"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
                     </StackPanel>
                 </Border>
 
@@ -34,7 +47,14 @@
                         Command="{Binding LogoutCommand}"
                         Classes="nav-btn"
                         Foreground="#E63946"
-                        Margin="8,8,8,12"/>
+                        Margin="8,4,8,12"/>
+
+                <!-- Botón Mi Perfil justo sobre el logout -->
+                <Button DockPanel.Dock="Bottom"
+                        Content="👤   Mi Perfil"
+                        Command="{Binding NavegarAPerfilCommand}"
+                        Classes="nav-btn"
+                        Margin="8,8,8,0"/>
 
                 <!-- Ítems de navegación -->
                 <StackPanel Margin="8,16,8,0" Spacing="2">
