@@ -65,7 +65,8 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int    _estadoSistema;
     [ObservableProperty] private int    _modoActivo;
     [ObservableProperty] private int    _repeticionesHechas;
-    [ObservableProperty] private int    _repeticionesObjetivo    = 10;
+    // decimal? para coincidir con NumericUpDown.Value (Avalonia); se castea a int al guardar.
+    [ObservableProperty] private decimal? _repeticionesObjetivo = 10;
     [ObservableProperty] private int    _presionMaxima;
     [ObservableProperty] private int    _anguloMotor0;
     [ObservableProperty] private int    _anguloMotor1;
@@ -165,8 +166,10 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     /// Si había una sesión sin cerrar, la vuelca primero (caso edge: doble "Iniciar").
     /// </summary>
     [RelayCommand]
-    private async Task IniciarRutinaAsync(int repeticionesObjetivo)
+    private async Task IniciarRutinaAsync(decimal? repeticionesObjetivo)
     {
+        var reps = (int)(repeticionesObjetivo ?? RepeticionesObjetivo ?? 10);
+
         // Cierra cualquier sesión anterior sin cerrar (edge case)
         await FlushSesionAsync();
 
@@ -179,12 +182,12 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
             PacienteId           = _pacienteIdActual,
             FechaHora            = DateTime.UtcNow,
             ModoActivo           = ModoSeleccionado,
-            RepeticionesObjetivo = repeticionesObjetivo
+            RepeticionesObjetivo = reps
         };
 
         _stopwatchSesion.Restart();
 
-        await _ws.SendCommandAsync(new EspCommand("start", repeticionesObjetivo, ModoSeleccionado));
+        await _ws.SendCommandAsync(new EspCommand("start", reps, ModoSeleccionado));
     }
 
     /// <summary>
@@ -219,7 +222,7 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     {
         _rutinaId            = rutina.Id;
         ModoSeleccionado     = rutina.ModoActivo;
-        RepeticionesObjetivo = rutina.RepeticionesObjetivo;
+        RepeticionesObjetivo = (decimal)rutina.RepeticionesObjetivo;
         ModosBloqueados      = true;
         BannerRutina         = $"Rutina asignada · Modo: {rutina.ModoTexto} · {rutina.RepeticionesObjetivo} repeticiones";
     }
