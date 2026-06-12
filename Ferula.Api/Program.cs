@@ -55,6 +55,24 @@ using (var scope = app.Services.CreateScope())
     try
     {
         db.Database.EnsureCreated();
+
+        // Migración idempotente: crea la tabla Rutinas si no existe todavía.
+        // EnsureCreated solo crea el esquema completo en una BD nueva; no altera
+        // una BD existente. Este bloque cubre la ruta de actualización en producción.
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE TABLE IF NOT EXISTS "Rutinas" (
+                "Id"                   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                "PacienteId"           INTEGER NOT NULL,
+                "FechaAsignacion"      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                "ModoActivo"           INTEGER NOT NULL DEFAULT 0,
+                "RepeticionesObjetivo" INTEGER NOT NULL DEFAULT 10,
+                "Completada"           BOOLEAN NOT NULL DEFAULT FALSE,
+                CONSTRAINT "FK_Rutinas_Pacientes_PacienteId"
+                    FOREIGN KEY ("PacienteId") REFERENCES "Pacientes" ("Id") ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS "IX_Rutinas_PacienteId" ON "Rutinas" ("PacienteId");
+            """);
+
         logger.LogInformation("Esquema de base de datos verificado correctamente.");
     }
     catch (Exception ex)
@@ -220,6 +238,69 @@ app.MapGet("/api/sesiones/{id:int}/detalles", async (int id, AppDbContext db) =>
 })
 .WithName("GetDetallesSesion")
 .WithTags("Sesiones");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ POST /api/rutinas
+// │ Crea una rutina asignada por el fisioterapeuta a un paciente.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/rutinas", async (Rutina rutina, AppDbContext db) =>
+{
+    rutina.Id         = 0;
+    rutina.Completada = false;
+    rutina.FechaAsignacion = DateTime.SpecifyKind(
+        rutina.FechaAsignacion == default ? DateTime.UtcNow : rutina.FechaAsignacion,
+        DateTimeKind.Utc);
+
+    db.Rutinas.Add(rutina);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/rutinas/{rutina.Id}", new { id = rutina.Id });
+})
+.WithName("CreateRutina")
+.WithTags("Rutinas");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ GET /api/rutinas/paciente/{pacienteId}
+// │ Lista las rutinas pendientes (Completada = false) de un paciente.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/rutinas/paciente/{pacienteId:int}", async (int pacienteId, AppDbContext db) =>
+{
+    var rutinas = await db.Rutinas
+        .Where(r => r.PacienteId == pacienteId && !r.Completada)
+        .OrderByDescending(r => r.FechaAsignacion)
+        .Select(r => new
+        {
+            r.Id,
+            r.PacienteId,
+            r.FechaAsignacion,
+            r.ModoActivo,
+            r.RepeticionesObjetivo,
+            r.Completada
+        })
+        .ToListAsync();
+
+    return Results.Ok(rutinas);
+})
+.WithName("GetRutinasPaciente")
+.WithTags("Rutinas");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ PATCH /api/rutinas/{id}/completar
+// │ Marca una rutina como completada tras ejecutar la sesión vinculada.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapMethods("/api/rutinas/{id:int}/completar", ["PATCH"], async (int id, AppDbContext db) =>
+{
+    var rutina = await db.Rutinas.FindAsync(id);
+    if (rutina is null)
+        return Results.NotFound(new { mensaje = $"Rutina #{id} no encontrada." });
+
+    rutina.Completada = true;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { id = rutina.Id, completada = true });
+})
+.WithName("CompletarRutina")
+.WithTags("Rutinas");
 
 // ──────────────────────────────────────────────────────────────────────────────
 app.Run();

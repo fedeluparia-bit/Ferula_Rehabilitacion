@@ -160,6 +160,55 @@ public sealed class ApiSyncService : IDisposable
     }
 
     /// <summary>
+    /// Descarga las rutinas pendientes (<c>Completada = false</c>) de un paciente
+    /// identificado por su ID en la nube (PostgreSQL).
+    /// Devuelve lista vacía ante cualquier error de red o respuesta no exitosa.
+    /// </summary>
+    public async Task<List<Models.Rutina>> ObtenerRutinasPendientesAsync(int cloudPacienteId)
+    {
+        try
+        {
+            var response = await _http.GetAsync($"/api/rutinas/paciente/{cloudPacienteId}");
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine(
+                    $"[ApiSync] GET /api/rutinas/paciente/{cloudPacienteId} → HTTP {(int)response.StatusCode}");
+                return [];
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<Models.Rutina>>(body, JsonOpts) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] ObtenerRutinasPendientesAsync: {ex.GetType().Name}: {ex.Message}");
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Llama a <c>PATCH /api/rutinas/{id}/completar</c> para marcar la rutina como realizada.
+    /// </summary>
+    public async Task<bool> MarcarRutinaCompletadaAsync(int rutinaId)
+    {
+        try
+        {
+            var response = await _http.PatchAsync($"/api/rutinas/{rutinaId}/completar", null);
+
+            if (!response.IsSuccessStatusCode)
+                Debug.WriteLine(
+                    $"[ApiSync] PATCH /api/rutinas/{rutinaId}/completar → HTTP {(int)response.StatusCode}");
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] MarcarRutinaCompletadaAsync: {ex.GetType().Name}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Llama a <c>GET /api/status</c> para verificar disponibilidad sin enviar datos.
     /// Útil para comprobar la conectividad antes de mostrar el botón activo.
     /// </summary>

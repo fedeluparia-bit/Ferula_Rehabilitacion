@@ -75,6 +75,24 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int    _modoSeleccionado        = 0;
     [ObservableProperty] private int    _presionSimuladaSlider   = 0;
 
+    // ── Estado de rutina asignada ─────────────────────────────────────────────
+    /// <summary>True cuando la sesión fue iniciada desde una Rutina Programada.
+    /// Bloquea los controles de Repeticiones y Modo en la UI.</summary>
+    [ObservableProperty] private bool   _modosBloqueados = false;
+
+    /// <summary>Descripción de la rutina activa que se muestra en el banner.</summary>
+    [ObservableProperty] private string _bannerRutina    = string.Empty;
+
+    /// <summary>ID de la rutina en la nube que disparó esta sesión. Null en sesión libre.</summary>
+    private int? _rutinaId;
+
+    /// <summary>
+    /// Callback invocado al finalizar una sesión vinculada a una rutina.
+    /// El parámetro es el ID de la rutina en la nube (PostgreSQL).
+    /// Asignado por DashboardViewModel para desacoplar la llamada HTTP de este ViewModel.
+    /// </summary>
+    public Func<int, Task>? OnRutinaCompletada { get; set; }
+
     // ── Propiedades computadas ────────────────────────────────────────────────
 
     public string EstadoConexionTexto => EstaConectado ? "Online" : "Offline";
@@ -192,6 +210,20 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         await FlushSesionAsync();
     }
 
+    /// <summary>
+    /// Precarga los parámetros de una Rutina Programada y bloquea la UI para que
+    /// el paciente no pueda modificar el modo ni las repeticiones.
+    /// Llamado por DashboardViewModel antes de navegar a esta vista.
+    /// </summary>
+    public void AplicarRutina(Models.Rutina rutina)
+    {
+        _rutinaId            = rutina.Id;
+        ModoSeleccionado     = rutina.ModoActivo;
+        RepeticionesObjetivo = rutina.RepeticionesObjetivo;
+        ModosBloqueados      = true;
+        BannerRutina         = $"Rutina asignada · Modo: {rutina.ModoTexto} · {rutina.RepeticionesObjetivo} repeticiones";
+    }
+
     // ── Manejadores de eventos WebSocket ──────────────────────────────────────
 
     private void OnTelemetryReceived(object? sender, TelemetryPacket packet)
@@ -287,6 +319,7 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         sesion.Detalles           = buffer;          // EF Core asignará SesionId a cada item
 
         // ── Escritura a BD en hilo de pool (nunca bloquea el dispatcher) ──────
+        bool guardadoOk = true;
         try
         {
             await Task.Run(async () =>
@@ -298,10 +331,20 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex)
         {
-            // No propagar la excepción — la app continúa operativa.
-            // En una fase futura esto debería publicar un evento de error a la UI.
+            guardadoOk = false;
             Debug.WriteLine($"[DB] Error al guardar sesión: {ex.Message}");
         }
+
+        // ── Restablecer estado de rutina (UI thread, tras el await) ──────────
+        // Capturar antes de limpiar para poder notificar el ID correcto.
+        var rutinaIdSnapshot = _rutinaId;
+        _rutinaId       = null;
+        ModosBloqueados = false;
+        BannerRutina    = string.Empty;
+
+        // Notificar a DashboardViewModel para que llame PATCH /api/rutinas/{id}/completar
+        if (guardadoOk && rutinaIdSnapshot.HasValue && OnRutinaCompletada is not null)
+            await OnRutinaCompletada(rutinaIdSnapshot.Value);
     }
 
     // ── Inicialización del paciente demo ─────────────────────────────────────

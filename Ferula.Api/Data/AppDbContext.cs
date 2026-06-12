@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Paciente>          Pacientes          { get; set; }
     public DbSet<Sesion>            Sesiones           { get; set; }
     public DbSet<DetalleTelemetria> DetallesTelemetria { get; set; }
+    public DbSet<Rutina>            Rutinas            { get; set; }
 
     // ── Modelo relacional (Fluent API) ────────────────────────────────────────
 
@@ -58,6 +59,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             // Índice compuesto para reconstrucción de señal ordenada por tiempo (O log n)
             entity.HasIndex(d => new { d.SesionId, d.Milisegundo });
+        });
+
+        // ── Rutina ────────────────────────────────────────────────────────────
+        modelBuilder.Entity<Rutina>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            // FK: Rutina → Paciente (cascade delete)
+            entity.HasOne(r => r.Paciente)
+                  .WithMany(p => p.Rutinas)
+                  .HasForeignKey(r => r.PacienteId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(r => r.Completada).HasDefaultValue(false);
         });
     }
 }
