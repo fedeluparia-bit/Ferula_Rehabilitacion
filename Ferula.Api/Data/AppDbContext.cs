@@ -19,6 +19,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Sesion>            Sesiones           { get; set; }
     public DbSet<DetalleTelemetria> DetallesTelemetria { get; set; }
     public DbSet<Rutina>            Rutinas            { get; set; }
+    public DbSet<Usuario>           Usuarios           { get; set; }
+    public DbSet<InvitacionRutina>  InvitacionesRutina { get; set; }
 
     // ── Modelo relacional (Fluent API) ────────────────────────────────────────
 
@@ -73,6 +75,37 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.Property(r => r.Completada).HasDefaultValue(false);
+        });
+
+        // ── Usuario ───────────────────────────────────────────────────────────
+        modelBuilder.Entity<Usuario>(entity =>
+        {
+            entity.HasKey(u => u.Id);
+            entity.Property(u => u.Nombre).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.Apellido).IsRequired().HasMaxLength(100);
+            entity.Property(u => u.EsTerapeuta).HasDefaultValue(false);
+        });
+
+        // ── InvitacionRutina ──────────────────────────────────────────────────
+        modelBuilder.Entity<InvitacionRutina>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.Estado).IsRequired().HasMaxLength(20).HasDefaultValue("Pendiente");
+            entity.Property(i => i.RemitenteNombre).IsRequired().HasMaxLength(200);
+
+            // Restrict para evitar múltiples caminos de cascade en la misma tabla
+            entity.HasOne(i => i.Remitente)
+                  .WithMany(u => u.InvitacionesEnviadas)
+                  .HasForeignKey(i => i.RemitenteId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(i => i.Destinatario)
+                  .WithMany(u => u.InvitacionesRecibidas)
+                  .HasForeignKey(i => i.DestinatarioId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Índice para consultas frecuentes de bandeja de entrada
+            entity.HasIndex(i => new { i.DestinatarioId, i.Estado });
         });
     }
 }

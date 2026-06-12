@@ -73,6 +73,34 @@ using (var scope = app.Services.CreateScope())
             CREATE INDEX IF NOT EXISTS "IX_Rutinas_PacienteId" ON "Rutinas" ("PacienteId");
             """);
 
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE TABLE IF NOT EXISTS "Usuarios" (
+                "Id"          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                "Nombre"      VARCHAR(100) NOT NULL,
+                "Apellido"    VARCHAR(100) NOT NULL,
+                "EsTerapeuta" BOOLEAN NOT NULL DEFAULT FALSE
+            );
+
+            CREATE TABLE IF NOT EXISTS "InvitacionesRutina" (
+                "Id"                   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                "RemitenteId"          INTEGER NOT NULL,
+                "DestinatarioId"       INTEGER NOT NULL,
+                "RemitenteNombre"      VARCHAR(200) NOT NULL,
+                "RemitenteEsTerapeuta" BOOLEAN NOT NULL DEFAULT FALSE,
+                "ModoActivo"           INTEGER NOT NULL DEFAULT 0,
+                "RepeticionesObjetivo" INTEGER NOT NULL DEFAULT 10,
+                "Estado"               VARCHAR(20) NOT NULL DEFAULT 'Pendiente',
+                "FechaEnvio"           TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                CONSTRAINT "FK_InvitacionesRutina_Usuarios_RemitenteId"
+                    FOREIGN KEY ("RemitenteId") REFERENCES "Usuarios" ("Id") ON DELETE RESTRICT,
+                CONSTRAINT "FK_InvitacionesRutina_Usuarios_DestinatarioId"
+                    FOREIGN KEY ("DestinatarioId") REFERENCES "Usuarios" ("Id") ON DELETE RESTRICT
+            );
+
+            CREATE INDEX IF NOT EXISTS "IX_InvitacionesRutina_DestinatarioId_Estado"
+                ON "InvitacionesRutina" ("DestinatarioId", "Estado");
+            """);
+
         logger.LogInformation("Esquema de base de datos verificado correctamente.");
     }
     catch (Exception ex)
@@ -302,5 +330,152 @@ app.MapMethods("/api/rutinas/{id:int}/completar", ["PATCH"], async (int id, AppD
 .WithName("CompletarRutina")
 .WithTags("Rutinas");
 
+// ══════════════════════════════════════════════════════════════════════════════
+// USUARIOS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ POST /api/usuarios
+// │ Upsert: busca por Nombre+Apellido, crea si no existe, actualiza EsTerapeuta.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/usuarios", async (Usuario usuario, AppDbContext db) =>
+{
+    var existente = await db.Usuarios.FirstOrDefaultAsync(
+        u => u.Nombre == usuario.Nombre && u.Apellido == usuario.Apellido);
+
+    if (existente is not null)
+    {
+        if (existente.EsTerapeuta != usuario.EsTerapeuta)
+        {
+            existente.EsTerapeuta = usuario.EsTerapeuta;
+            await db.SaveChangesAsync();
+        }
+        return Results.Ok(new { id = existente.Id, esTerapeuta = existente.EsTerapeuta });
+    }
+
+    usuario.Id = 0;
+    db.Usuarios.Add(usuario);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/usuarios/{usuario.Id}",
+        new { id = usuario.Id, esTerapeuta = usuario.EsTerapeuta });
+})
+.WithName("UpsertUsuario").WithTags("Usuarios");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ GET /api/usuarios?nombre=xxx
+// │ Búsqueda por nombre o apellido (parcial, hasta 20 resultados).
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/usuarios", async (string? nombre, AppDbContext db) =>
+{
+    var query = db.Usuarios.AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(nombre))
+        query = query.Where(u => u.Nombre.Contains(nombre) || u.Apellido.Contains(nombre));
+
+    var resultados = await query
+        .OrderBy(u => u.Apellido).ThenBy(u => u.Nombre)
+        .Take(20)
+        .Select(u => new { u.Id, u.Nombre, u.Apellido, u.EsTerapeuta })
+        .ToListAsync();
+
+    return Results.Ok(resultados);
+})
+.WithName("BuscarUsuarios").WithTags("Usuarios");
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INVITACIONES
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ POST /api/invitaciones
+// │ Crea una invitación de rutina entre dos usuarios.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/invitaciones", async (InvitacionRutina inv, AppDbContext db) =>
+{
+    inv.Id     = 0;
+    inv.Estado = "Pendiente";
+    inv.FechaEnvio = DateTime.SpecifyKind(
+        inv.FechaEnvio == default ? DateTime.UtcNow : inv.FechaEnvio,
+        DateTimeKind.Utc);
+
+    db.InvitacionesRutina.Add(inv);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/invitaciones/{inv.Id}", new { id = inv.Id });
+})
+.WithName("CreateInvitacion").WithTags("Invitaciones");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ GET /api/invitaciones/pendientes/{usuarioId}
+// │ Bandeja de entrada: invitaciones donde Destinatario = usuarioId y Estado = Pendiente.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/invitaciones/pendientes/{usuarioId:int}", async (int usuarioId, AppDbContext db) =>
+{
+    var invitaciones = await db.InvitacionesRutina
+        .Where(i => i.DestinatarioId == usuarioId && i.Estado == "Pendiente")
+        .OrderByDescending(i => i.FechaEnvio)
+        .Select(i => new
+        {
+            i.Id,
+            i.RemitenteId,
+            i.DestinatarioId,
+            i.RemitenteNombre,
+            i.RemitenteEsTerapeuta,
+            i.ModoActivo,
+            i.RepeticionesObjetivo,
+            i.Estado,
+            i.FechaEnvio
+        })
+        .ToListAsync();
+
+    return Results.Ok(invitaciones);
+})
+.WithName("GetInvitacionesPendientes").WithTags("Invitaciones");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ POST /api/invitaciones/{id}/responder
+// │ Acepta o rechaza una invitación.
+// │ Si se acepta, crea una Rutina atómicamente en la misma transacción.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/invitaciones/{id:int}/responder",
+    async (int id, ResponderInvitacionDto dto, AppDbContext db) =>
+{
+    var inv = await db.InvitacionesRutina.FindAsync(id);
+    if (inv is null)
+        return Results.NotFound(new { mensaje = $"Invitación #{id} no encontrada." });
+    if (inv.Estado != "Pendiente")
+        return Results.BadRequest(new { mensaje = $"La invitación ya fue {inv.Estado.ToLower()}." });
+
+    if (dto.Aceptada)
+    {
+        inv.Estado = "Aceptada";
+
+        // Creación atómica: la Rutina se guarda junto al cambio de estado
+        // en el mismo SaveChangesAsync → misma transacción implícita de EF Core.
+        var rutina = new Rutina
+        {
+            PacienteId           = dto.PacienteId ?? inv.DestinatarioId,
+            FechaAsignacion      = DateTime.UtcNow,
+            ModoActivo           = inv.ModoActivo,
+            RepeticionesObjetivo = inv.RepeticionesObjetivo,
+            Completada           = false
+        };
+        db.Rutinas.Add(rutina);
+    }
+    else
+    {
+        inv.Estado = "Rechazada";
+    }
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { estado = inv.Estado });
+})
+.WithName("ResponderInvitacion").WithTags("Invitaciones");
+
 // ──────────────────────────────────────────────────────────────────────────────
 app.Run();
+
+// ─── Declaraciones de tipos (deben ir después del último top-level statement) ──
+record ResponderInvitacionDto(bool Aceptada, int? PacienteId = null);

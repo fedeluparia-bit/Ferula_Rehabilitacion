@@ -159,6 +159,148 @@ public sealed class ApiSyncService : IDisposable
         }
     }
 
+    // ── Usuarios ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Crea o devuelve el usuario en la nube identificado por Nombre+Apellido.
+    /// Actualiza <c>EsTerapeuta</c> si cambió. Devuelve el ID de PostgreSQL.
+    /// </summary>
+    public async Task<int?> SincronizarUsuarioAsync(string nombre, string apellido, bool esTerapeuta = false)
+    {
+        try
+        {
+            var payload = new { nombre, apellido, esTerapeuta };
+            var json    = JsonSerializer.Serialize(payload, JsonOpts);
+            using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _http.PostAsync("/api/usuarios", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"[ApiSync] POST /api/usuarios → HTTP {(int)response.StatusCode}");
+                return null;
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+            return doc.RootElement.GetProperty("id").GetInt32();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] SincronizarUsuarioAsync: {ex.GetType().Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Busca usuarios en la nube cuyo nombre o apellido contenga <paramref name="query"/>.
+    /// </summary>
+    public async Task<List<Models.Usuario>> BuscarUsuariosAsync(string query)
+    {
+        try
+        {
+            var encoded  = Uri.EscapeDataString(query);
+            var response = await _http.GetAsync($"/api/usuarios?nombre={encoded}");
+            if (!response.IsSuccessStatusCode)
+                return [];
+
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<Models.Usuario>>(body, JsonOpts) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] BuscarUsuariosAsync: {ex.GetType().Name}: {ex.Message}");
+            return [];
+        }
+    }
+
+    // ── Invitaciones ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Envía una invitación de rutina a otro usuario (<c>POST /api/invitaciones</c>).
+    /// </summary>
+    public async Task<bool> EnviarInvitacionAsync(
+        int    remitenteId,
+        int    destinatarioId,
+        string remitenteNombre,
+        bool   remitenteEsTerapeuta,
+        int    modoActivo,
+        int    repeticionesObjetivo)
+    {
+        try
+        {
+            var payload = new
+            {
+                remitenteId,
+                destinatarioId,
+                remitenteNombre,
+                remitenteEsTerapeuta,
+                modoActivo,
+                repeticionesObjetivo
+            };
+            var json    = JsonSerializer.Serialize(payload, JsonOpts);
+            using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _http.PostAsync("/api/invitaciones", content);
+            if (!response.IsSuccessStatusCode)
+                Debug.WriteLine($"[ApiSync] POST /api/invitaciones → HTTP {(int)response.StatusCode}");
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] EnviarInvitacionAsync: {ex.GetType().Name}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Descarga las invitaciones pendientes de la bandeja de entrada de un usuario.
+    /// </summary>
+    public async Task<List<Models.InvitacionRutina>> ObtenerInvitacionesPendientesAsync(int usuarioId)
+    {
+        try
+        {
+            var response = await _http.GetAsync($"/api/invitaciones/pendientes/{usuarioId}");
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"[ApiSync] GET /api/invitaciones/pendientes/{usuarioId} → HTTP {(int)response.StatusCode}");
+                return [];
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<Models.InvitacionRutina>>(body, JsonOpts) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] ObtenerInvitacionesPendientesAsync: {ex.GetType().Name}: {ex.Message}");
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Acepta o rechaza una invitación. Cuando acepta, la API crea la Rutina atómicamente.
+    /// </summary>
+    public async Task<bool> ResponderInvitacionAsync(int invitacionId, bool aceptada, int? cloudPacienteId)
+    {
+        try
+        {
+            var payload = new { aceptada, pacienteId = cloudPacienteId };
+            var json    = JsonSerializer.Serialize(payload, JsonOpts);
+            using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _http.PostAsync($"/api/invitaciones/{invitacionId}/responder", content);
+            if (!response.IsSuccessStatusCode)
+                Debug.WriteLine($"[ApiSync] POST /api/invitaciones/{invitacionId}/responder → HTTP {(int)response.StatusCode}");
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] ResponderInvitacionAsync: {ex.GetType().Name}: {ex.Message}");
+            return false;
+        }
+    }
+
     /// <summary>
     /// Descarga las rutinas pendientes (<c>Completada = false</c>) de un paciente
     /// identificado por su ID en la nube (PostgreSQL).

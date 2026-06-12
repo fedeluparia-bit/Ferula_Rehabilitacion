@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FerulaSoftware.App.ViewModels"
+             x:Class="FerulaSoftware.App.Views.BandejaEntradaView"
+             x:DataType="vm:BandejaEntradaViewModel"
+             Background="#0D1117">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="#161B22"
+                BorderBrush="#30363D"
+                BorderThickness="0,0,0,1"
+                Padding="28,20">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="BANDEJA DE ENTRADA"
+                               Foreground="#8B949E" FontSize="11" FontWeight="Bold"
+                               LetterSpacing="1.5"/>
+                    <TextBlock Text="Rutinas enviadas por otros usuarios"
+                               Foreground="#E6EDF3" FontSize="20" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="⟳  Actualizar"
+                        Command="{Binding DescargarInvitacionesCommand}"
+                        IsEnabled="{Binding !Cargando}"
+                        VerticalAlignment="Center"
+                        Classes="btn-primary"
+                        FontSize="13"
+                        Padding="16,8"/>
+            </Grid>
+        </Border>
+
+        <!-- ── Barra de estado ────────────────────────────────────────────── -->
+        <Border Grid.Row="1" Background="#0D1117" Padding="28,10,28,0">
+            <StackPanel Spacing="6">
+                <ProgressBar IsIndeterminate="True"
+                             IsVisible="{Binding Cargando}"
+                             Height="2"
+                             Background="#30363D"
+                             Foreground="#58A6FF"/>
+                <TextBlock Text="{Binding MensajeEstado}"
+                           Foreground="#8B949E" FontSize="13"
+                           IsVisible="{Binding MensajeEstado,
+                               Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Lista de invitaciones ──────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="2" Padding="28,16,28,24">
+            <ItemsControl ItemsSource="{Binding Invitaciones}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:InvitacionItem">
+
+                        <Border Background="#161B22"
+                                BorderBrush="#30363D"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="20,16"
+                                Margin="0,0,0,12">
+                            <StackPanel Spacing="10">
+
+                                <!-- Remitente + badge de terapeuta -->
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Foreground="#E6EDF3"
+                                               FontSize="15" FontWeight="SemiBold">
+                                        <Run Text="De: "/>
+                                        <Run Text="{Binding Invitacion.RemitenteNombre}"
+                                             Foreground="#C9D1D9"/>
+                                    </TextBlock>
+
+                                    <!-- Badge: visible solo si el remitente es terapeuta -->
+                                    <Border Background="#0D2A1A"
+                                            BorderBrush="#3FB950"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="8,2"
+                                            IsVisible="{Binding Invitacion.RemitenteEsTerapeuta}">
+                                        <TextBlock Text="✔  Terapeuta Verificado"
+                                                   Foreground="#3FB950"
+                                                   FontSize="10" FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Parámetros de la rutina -->
+                                <TextBlock Foreground="#C9D1D9" FontSize="13">
+                                    <Run Text="Modo: "/>
+                                    <Run Text="{Binding Invitacion.ModoTexto}"
+                                         Foreground="#4CC9F0"/>
+                                </TextBlock>
+
+                                <TextBlock Foreground="#C9D1D9" FontSize="13">
+                                    <Run Text="Objetivo: "/>
+                                    <Run Text="{Binding Invitacion.RepeticionesObjetivo}"
+                                         Foreground="#58A6FF" FontWeight="Bold"/>
+                                    <Run Text=" repeticiones"/>
+                                </TextBlock>
+
+                                <TextBlock Foreground="#8B949E" FontSize="12">
+                                    <Run Text="Recibida el "/>
+                                    <Run Text="{Binding Invitacion.FechaTexto}"/>
+                                </TextBlock>
+
+                                <Separator Background="#30363D" Height="1"/>
+
+                                <!-- Botones de respuesta -->
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Content="✅  Aceptar"
+                                            Command="{Binding AceptarCommand}"
+                                            Classes="btn-primary"
+                                            FontSize="13"
+                                            Padding="16,8"/>
+
+                                    <Button Content="❌  Rechazar"
+                                            Command="{Binding RechazarCommand}"
+                                            Classes="btn-secondary"
+                                            FontSize="13"
+                                            Padding="16,8"/>
+                                </StackPanel>
+
+                            </StackPanel>
+                        </Border>
+
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>
