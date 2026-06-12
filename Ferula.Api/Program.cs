@@ -31,6 +31,18 @@ var connectionString =
         "No se encontró cadena de conexión. " +
         "Define DATABASE_URL (producción) o ConnectionStrings:DefaultConnection (desarrollo).");
 
+// Npgsql no acepta URIs postgres:// directamente — las convierte a formato key=value.
+// Render.com inyecta DATABASE_URL como URI estándar, así que hay que convertirla.
+if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+{
+    var uri      = new Uri(connectionString);
+    var userInfo = uri.UserInfo.Split(':');
+    connectionString =
+        $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};" +
+        $"Username={userInfo[0]};Password={Uri.UnescapeDataString(userInfo[1])};" +
+        $"SSL Mode=Require;Trust Server Certificate=true";
+}
+
 // ── DbContext con PostgreSQL (Npgsql) ─────────────────────────────────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
