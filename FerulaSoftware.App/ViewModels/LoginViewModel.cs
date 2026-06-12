@@ -11,6 +11,7 @@ namespace FerulaSoftware.App.ViewModels;
 public sealed partial class LoginViewModel : ViewModelBase
 {
     private readonly Action<Usuario> _onIngreso;
+    private readonly Action          _onRegistro;
     private readonly ApiSyncService  _apiSync;
 
     [ObservableProperty] private string _email      = string.Empty;
@@ -18,10 +19,11 @@ public sealed partial class LoginViewModel : ViewModelBase
     [ObservableProperty] private string _error      = string.Empty;
     [ObservableProperty] private bool   _cargando   = false;
 
-    public LoginViewModel(Action<Usuario> onIngreso, ApiSyncService apiSync)
+    public LoginViewModel(Action<Usuario> onIngreso, Action onRegistro, ApiSyncService apiSync)
     {
-        _onIngreso = onIngreso;
-        _apiSync   = apiSync;
+        _onIngreso  = onIngreso;
+        _onRegistro = onRegistro;
+        _apiSync    = apiSync;
     }
 
     [RelayCommand]
@@ -58,4 +60,7 @@ public sealed partial class LoginViewModel : ViewModelBase
             Cargando = false;
         }
     }
+
+    [RelayCommand]
+    private void IrARegistro() => _onRegistro();
 }
