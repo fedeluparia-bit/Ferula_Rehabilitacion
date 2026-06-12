@@ -20,6 +20,9 @@ public class Usuario
     [MaxLength(200)]
     public string? Email { get; set; }
 
+    [MaxLength(200)]
+    public string? Password { get; set; }
+
     // Navegación
     public ICollection<InvitacionRutina> InvitacionesEnviadas   { get; set; } = [];
     public ICollection<InvitacionRutina> InvitacionesRecibidas  { get; set; } = [];

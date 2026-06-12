@@ -65,30 +65,37 @@ public sealed partial class BandejaEntradaViewModel : ViewModelBase
 
         try
         {
-            // Resolver paciente y usuario en la nube
-            Paciente? paciente = null;
-            await Task.Run(async () =>
+            // Usar el usuario logueado si está disponible; si no, sincronizar desde BD local.
+            int cloudUsuarioId;
+            if (ApiSyncService.UsuarioActual is { } loggedIn)
             {
-                await using var db = _dbFactory();
-                paciente = await db.Pacientes.FirstOrDefaultAsync();
-            });
+                cloudUsuarioId = loggedIn.Id;
+            }
+            else
+            {
+                Paciente? paciente = null;
+                await Task.Run(async () =>
+                {
+                    await using var db = _dbFactory();
+                    paciente = await db.Pacientes.FirstOrDefaultAsync();
+                });
 
-            if (paciente is null)
-            {
-                MensajeEstado = "Error: no hay paciente registrado localmente.";
-                return;
+                if (paciente is null)
+                {
+                    MensajeEstado = "Error: no hay paciente registrado localmente.";
+                    return;
+                }
+
+                var syncId = await _apiSync.SincronizarUsuarioAsync(paciente.Nombre, paciente.Apellido);
+                if (syncId is null)
+                {
+                    MensajeEstado = "Error: no se pudo conectar con la nube.";
+                    return;
+                }
+                cloudUsuarioId = (int)syncId;
             }
 
-            var cloudUsuarioId = await _apiSync.SincronizarUsuarioAsync(
-                paciente.Nombre, paciente.Apellido);
-
-            if (cloudUsuarioId is null)
-            {
-                MensajeEstado = "Error: no se pudo conectar con la nube.";
-                return;
-            }
-
-            var invitaciones = await _apiSync.ObtenerInvitacionesPendientesAsync(cloudUsuarioId.Value);
+            var invitaciones = await _apiSync.ObtenerInvitacionesPendientesAsync(cloudUsuarioId);
 
             Invitaciones.Clear();
             foreach (var inv in invitaciones)

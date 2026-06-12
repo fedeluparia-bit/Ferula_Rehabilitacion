@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Ferula.Api.Data;
 using Ferula.Api.Models;
 using Microsoft.EntityFrameworkCore;
@@ -114,9 +115,10 @@ using (var scope = app.Services.CreateScope())
                 ON "InvitacionesRutina" ("DestinatarioId", "Estado");
             """);
 
-        // Columna Email agregada en fase de invitaciones por correo electrónico.
+        // Columnas añadidas en fases posteriores al primer deploy.
         await db.Database.ExecuteSqlRawAsync("""
-            ALTER TABLE "Usuarios" ADD COLUMN IF NOT EXISTS "Email" VARCHAR(200);
+            ALTER TABLE "Usuarios" ADD COLUMN IF NOT EXISTS "Email"    VARCHAR(200);
+            ALTER TABLE "Usuarios" ADD COLUMN IF NOT EXISTS "Password" VARCHAR(200);
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_Usuarios_Email"
                 ON "Usuarios" ("Email") WHERE "Email" IS NOT NULL;
             """);
@@ -512,11 +514,76 @@ app.MapPost("/api/invitaciones/{id:int}/responder",
 })
 .WithName("ResponderInvitacion").WithTags("Invitaciones");
 
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════════════════════
+
+// SHA-256 del password: suficiente para un PoC sin dependencias externas.
+static string HashPassword(string pwd) =>
+    Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(pwd)));
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ POST /api/auth/registro
+// │ Crea un nuevo usuario con email único. Devuelve 409 si el email ya existe.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/auth/registro", async (RegistroDto dto, AppDbContext db) =>
+{
+    if (await db.Usuarios.AnyAsync(u => u.Email == dto.Email))
+        return Results.Conflict(new { mensaje = "El email ya está registrado." });
+
+    var usuario = new Usuario
+    {
+        Nombre      = dto.Nombre,
+        Apellido    = dto.Apellido,
+        Email       = dto.Email,
+        EsTerapeuta = dto.EsTerapeuta,
+        Password    = HashPassword(dto.Password)
+    };
+    db.Usuarios.Add(usuario);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/usuarios/{usuario.Id}", new
+    {
+        id          = usuario.Id,
+        nombre      = usuario.Nombre,
+        apellido    = usuario.Apellido,
+        email       = usuario.Email,
+        esTerapeuta = usuario.EsTerapeuta
+    });
+})
+.WithName("Registro").WithTags("Auth");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ POST /api/auth/login
+// │ Valida email + password (SHA-256). Devuelve datos del usuario o 401.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapPost("/api/auth/login", async (LoginDto dto, AppDbContext db) =>
+{
+    var hash    = HashPassword(dto.Password);
+    var usuario = await db.Usuarios.FirstOrDefaultAsync(
+        u => u.Email == dto.Email && u.Password == hash);
+
+    if (usuario is null)
+        return Results.Unauthorized();
+
+    return Results.Ok(new
+    {
+        id          = usuario.Id,
+        nombre      = usuario.Nombre,
+        apellido    = usuario.Apellido,
+        email       = usuario.Email,
+        esTerapeuta = usuario.EsTerapeuta
+    });
+})
+.WithName("Login").WithTags("Auth");
+
 // ──────────────────────────────────────────────────────────────────────────────
 app.Run();
 
 // ─── Declaraciones de tipos (deben ir después del último top-level statement) ──
 record ResponderInvitacionDto(bool Aceptada, int? PacienteId = null);
+record LoginDto(string Email, string Password);
+record RegistroDto(string Nombre, string Apellido, string Email, string Password, bool EsTerapeuta = false);
 record CrearInvitacionDto(
     int    RemitenteId,
     string RemitenteNombre,

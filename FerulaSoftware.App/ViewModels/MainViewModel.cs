@@ -1,15 +1,11 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FerulaSoftware.App.Data;
+using FerulaSoftware.App.Models;
 using FerulaSoftware.App.Services;
 
 namespace FerulaSoftware.App.ViewModels;
 
-/// <summary>
-/// Shell de navegación de la ventana principal.
-/// Es el único propietario de <see cref="IWebSocketService"/> y
-/// <see cref="ApiSyncService"/>; los dispone al cerrarse la aplicación.
-/// </summary>
 public sealed partial class MainViewModel : ViewModelBase, IDisposable
 {
     private readonly IWebSocketService _ws;
@@ -28,11 +24,12 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
 
     public void NavegarALogin()
     {
+        ApiSyncService.Logout();
         if (VistaActual is IDisposable anterior) anterior.Dispose();
-        VistaActual = new LoginViewModel(NavegarADashboard);
+        VistaActual = new LoginViewModel(NavegarADashboard, _apiSync);
     }
 
-    public void NavegarADashboard()
+    public void NavegarADashboard(Usuario usuario)
     {
         VistaActual = new DashboardViewModel(
             _ws,

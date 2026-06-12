@@ -5,7 +5,6 @@
              x:DataType="vm:LoginViewModel"
              Background="#0D1117">
 
-    <!-- Tarjeta centrada en la pantalla -->
     <Grid>
         <Border Background="#161B22"
                 BorderBrush="#30363D"
@@ -30,17 +29,18 @@
 
                 <Separator Background="#30363D" Height="1"/>
 
-                <!-- Usuario -->
+                <!-- Correo -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Usuario" Foreground="#C9D1D9" FontSize="13"/>
-                    <TextBox Text="{Binding Usuario}"
+                    <TextBlock Text="Correo electrónico" Foreground="#C9D1D9" FontSize="13"/>
+                    <TextBox Text="{Binding Email}"
                              Background="#0D1117"
                              Foreground="#E6EDF3"
                              BorderBrush="#30363D"
                              CornerRadius="5"
                              Padding="10,8"
                              FontSize="14"
-                             Watermark="Ingrese su usuario"/>
+                             Watermark="correo@ejemplo.com"
+                             IsEnabled="{Binding !Cargando}"/>
                 </StackPanel>
 
                 <!-- Contraseña -->
@@ -54,20 +54,40 @@
                              CornerRadius="5"
                              Padding="10,8"
                              FontSize="14"
-                             Watermark="Ingrese su contraseña"/>
+                             Watermark="Ingresá tu contraseña"
+                             IsEnabled="{Binding !Cargando}"/>
                 </StackPanel>
 
+                <!-- Error -->
+                <Border Background="#2D1111" BorderBrush="#F85149" BorderThickness="1"
+                        CornerRadius="5" Padding="10,7"
+                        IsVisible="{Binding Error,
+                            Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding Error}"
+                               Foreground="#F85149" FontSize="12" TextWrapping="Wrap"/>
+                </Border>
+
                 <!-- Botón ingresar -->
-                <Button Content="Ingresar"
-                        Command="{Binding IngresarCommand}"
+                <Button Command="{Binding IngresarCommand}"
+                        IsEnabled="{Binding !Cargando}"
                         Classes="btn-primary"
                         FontSize="15"
-                        Margin="0,6,0,0"/>
+                        Margin="0,6,0,0">
+                    <Panel>
+                        <TextBlock Text="Ingresar"
+                                   IsVisible="{Binding !Cargando}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Verificando..."
+                                   IsVisible="{Binding Cargando}"
+                                   Foreground="#8B949E"
+                                   HorizontalAlignment="Center"/>
+                    </Panel>
+                </Button>
 
                 <!-- Footer -->
-                <TextBlock Text="PoC — Acceso sin validación de credenciales"
+                <TextBlock Text="¿No tenés cuenta? Registrate desde la API de pruebas."
                            FontSize="10" Foreground="#6E7681"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center" TextWrapping="Wrap"/>
 
             </StackPanel>
         </Border>

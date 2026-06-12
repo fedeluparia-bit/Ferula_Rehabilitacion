@@ -59,32 +59,44 @@ public sealed partial class CompartirRutinaViewModel : ViewModelBase
 
         try
         {
-            Models.Paciente? paciente = null;
-            await Task.Run(async () =>
+            // Usar el usuario logueado si está disponible; si no, sincronizar desde BD local.
+            int    remitenteId;
+            string remitenteNombre;
+            if (ApiSyncService.UsuarioActual is { } loggedIn)
             {
-                await using var db = _dbFactory();
-                paciente = await db.Pacientes.FirstOrDefaultAsync();
-            });
-
-            if (paciente is null)
-            {
-                MostrarError("Error: no hay paciente registrado localmente.");
-                return;
+                remitenteId     = loggedIn.Id;
+                remitenteNombre = $"{loggedIn.Nombre} {loggedIn.Apellido}".Trim();
             }
-
-            var remitenteId = await _apiSync.SincronizarUsuarioAsync(
-                paciente.Nombre, paciente.Apellido, EsTerapeuta);
-
-            if (remitenteId is null)
+            else
             {
-                MostrarError("Error: no se pudo conectar con la nube.");
-                return;
-            }
+                Models.Paciente? paciente = null;
+                await Task.Run(async () =>
+                {
+                    await using var db = _dbFactory();
+                    paciente = await db.Pacientes.FirstOrDefaultAsync();
+                });
 
-            var remitenteNombre = $"{paciente.Nombre} {paciente.Apellido}".Trim();
+                if (paciente is null)
+                {
+                    MostrarError("Error: no hay paciente registrado localmente.");
+                    return;
+                }
+
+                var syncId = await _apiSync.SincronizarUsuarioAsync(
+                    paciente.Nombre, paciente.Apellido, EsTerapeuta);
+
+                if (syncId is null)
+                {
+                    MostrarError("Error: no se pudo conectar con la nube.");
+                    return;
+                }
+
+                remitenteId     = (int)syncId;
+                remitenteNombre = $"{paciente.Nombre} {paciente.Apellido}".Trim();
+            }
 
             var (ok, noEncontrado) = await _apiSync.EnviarInvitacionAsync(
-                remitenteId.Value,
+                remitenteId,
                 remitenteNombre,
                 EsTerapeuta,
                 EmailDestinatario.Trim(),

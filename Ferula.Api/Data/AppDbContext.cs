@@ -86,6 +86,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(u => u.EsTerapeuta).HasDefaultValue(false);
             entity.Property(u => u.Email).HasMaxLength(200);
             entity.HasIndex(u => u.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
+            entity.Property(u => u.Password).HasMaxLength(200);
         });
 
         // ── InvitacionRutina ──────────────────────────────────────────────────
