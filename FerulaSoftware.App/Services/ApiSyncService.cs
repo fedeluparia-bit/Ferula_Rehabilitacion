@@ -90,6 +90,44 @@ public sealed class ApiSyncService : IDisposable
     /// <summary>Limpia la sesión local (no invalida nada en el servidor).</summary>
     public static void Logout() => UsuarioActual = null;
 
+    /// <summary>
+    /// Registra un nuevo usuario (<c>POST /api/auth/registro</c>).
+    /// Retorna <c>(true, false)</c> en éxito, <c>(false, true)</c> si el email
+    /// ya existe (409) y <c>(false, false)</c> ante cualquier otro error.
+    /// </summary>
+    public async Task<(bool Success, bool EmailYaExiste)> RegistrarUsuarioAsync(
+        string nombre,
+        string apellido,
+        string email,
+        string password,
+        bool   esTerapeuta = false)
+    {
+        try
+        {
+            var payload = new { nombre, apellido, email, password, esTerapeuta };
+            var json    = JsonSerializer.Serialize(payload, JsonOpts);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _http.PostAsync("/api/auth/registro", content);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                return (false, true);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"[ApiSync] POST /api/auth/registro → HTTP {(int)response.StatusCode}");
+                return (false, false);
+            }
+
+            return (true, false);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] RegistrarUsuarioAsync: {ex.GetType().Name}: {ex.Message}");
+            return (false, false);
+        }
+    }
+
     // ── API pública ───────────────────────────────────────────────────────────
 
     /// <summary>

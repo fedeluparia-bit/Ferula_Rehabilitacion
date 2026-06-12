@@ -26,7 +26,12 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
     {
         ApiSyncService.Logout();
         if (VistaActual is IDisposable anterior) anterior.Dispose();
-        VistaActual = new LoginViewModel(NavegarADashboard, _apiSync);
+        VistaActual = new LoginViewModel(NavegarADashboard, NavegarARegistro, _apiSync);
+    }
+
+    public void NavegarARegistro()
+    {
+        VistaActual = new RegistroViewModel(NavegarALogin, _apiSync);
     }
 
     public void NavegarADashboard(Usuario usuario)

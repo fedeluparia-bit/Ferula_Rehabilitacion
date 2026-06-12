@@ -84,10 +84,13 @@
                     </Panel>
                 </Button>
 
-                <!-- Footer -->
-                <TextBlock Text="¿No tenés cuenta? Registrate desde la API de pruebas."
-                           FontSize="10" Foreground="#6E7681"
-                           HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                <!-- Crear cuenta -->
+                <Button Content="Crear cuenta nueva →"
+                        Command="{Binding IrARegistroCommand}"
+                        IsEnabled="{Binding !Cargando}"
+                        Classes="btn-secondary"
+                        FontSize="13"
+                        HorizontalContentAlignment="Center"/>
 
             </StackPanel>
         </Border>
