@@ -41,6 +41,9 @@ public sealed class ApiSyncService : IDisposable
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    /// <summary>Usuario autenticado actualmente. Null si no hay sesión activa.</summary>
+    public static Models.Usuario? UsuarioActual { get; private set; }
+
     public ApiSyncService(Uri? baseAddress = null)
     {
         _http = new HttpClient
@@ -50,6 +53,42 @@ public sealed class ApiSyncService : IDisposable
         };
         _http.DefaultRequestHeaders.Add("Accept", "application/json");
     }
+
+    // ── Autenticación ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Autentica al usuario contra <c>POST /api/auth/login</c>.
+    /// En éxito guarda el resultado en <see cref="UsuarioActual"/> y lo devuelve.
+    /// Devuelve null si las credenciales son incorrectas o hay error de red.
+    /// </summary>
+    public async Task<Models.Usuario?> LoginAsync(string email, string password)
+    {
+        try
+        {
+            var payload = new { email, password };
+            var json    = JsonSerializer.Serialize(payload, JsonOpts);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _http.PostAsync("/api/auth/login", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"[ApiSync] POST /api/auth/login → HTTP {(int)response.StatusCode}");
+                return null;
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            UsuarioActual = JsonSerializer.Deserialize<Models.Usuario>(body, JsonOpts);
+            return UsuarioActual;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] LoginAsync: {ex.GetType().Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>Limpia la sesión local (no invalida nada en el servidor).</summary>
+    public static void Logout() => UsuarioActual = null;
 
     // ── API pública ───────────────────────────────────────────────────────────
 
