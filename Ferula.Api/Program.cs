@@ -174,6 +174,19 @@ app.MapGet("/api/status", async (AppDbContext db) =>
 .WithTags("Health");
 
 // ┌─────────────────────────────────────────────────────────────────────────────
+// │ GET /api/pacientes
+// │ Lista todos los pacientes registrados, ordenados por apellido.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/pacientes", async (AppDbContext db) =>
+    Results.Ok(
+        await db.Pacientes
+            .OrderBy(p => p.Apellido).ThenBy(p => p.Nombre)
+            .Select(p => new { p.Id, p.Nombre, p.Apellido, p.FechaInicio })
+            .ToListAsync()))
+.WithName("GetPacientes")
+.WithTags("Pacientes");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
 // │ POST /api/pacientes
 // │ Crea el paciente si no existe, o devuelve el existente (upsert por nombre).
 // │ La app local usa IDs de SQLite que no coinciden con los de PostgreSQL, por
@@ -267,6 +280,29 @@ app.MapGet("/api/sesiones", async (AppDbContext db) =>
             })
             .ToListAsync()))
 .WithName("GetSesiones")
+.WithTags("Sesiones");
+
+// ┌─────────────────────────────────────────────────────────────────────────────
+// │ GET /api/sesiones/paciente/{pacienteId}
+// │ Sesiones de un paciente específico, sin telemetría, ordenadas por fecha desc.
+// └─────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/sesiones/paciente/{pacienteId:int}", async (int pacienteId, AppDbContext db) =>
+    Results.Ok(
+        await db.Sesiones
+            .Where(s => s.PacienteId == pacienteId)
+            .OrderByDescending(s => s.FechaHora)
+            .Select(s => new
+            {
+                s.Id,
+                s.PacienteId,
+                s.FechaHora,
+                s.ModoActivo,
+                s.RepeticionesObjetivo,
+                s.RepeticionesHechas,
+                s.PresionMaxima
+            })
+            .ToListAsync()))
+.WithName("GetSesionesPaciente")
 .WithTags("Sesiones");
 
 // ┌─────────────────────────────────────────────────────────────────────────────

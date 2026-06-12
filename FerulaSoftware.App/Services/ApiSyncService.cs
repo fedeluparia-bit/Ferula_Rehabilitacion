@@ -437,6 +437,65 @@ public sealed class ApiSyncService : IDisposable
         }
     }
 
+    // ── Consultas de lectura para el panel de terapeuta ──────────────────────
+
+    /// <summary>
+    /// Lista todos los pacientes registrados en la nube, ordenados por apellido.
+    /// </summary>
+    public async Task<List<Models.Paciente>> ObtenerPacientesAsync()
+    {
+        try
+        {
+            var response = await _http.GetAsync("/api/pacientes");
+            if (!response.IsSuccessStatusCode) return [];
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<Models.Paciente>>(body, JsonOpts) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] ObtenerPacientesAsync: {ex.GetType().Name}: {ex.Message}");
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Descarga el historial de sesiones de un paciente (sin telemetría) desde la nube.
+    /// </summary>
+    public async Task<List<Models.Sesion>> ObtenerHistorialPacienteAsync(int pacienteId)
+    {
+        try
+        {
+            var response = await _http.GetAsync($"/api/sesiones/paciente/{pacienteId}");
+            if (!response.IsSuccessStatusCode) return [];
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<Models.Sesion>>(body, JsonOpts) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] ObtenerHistorialPacienteAsync: {ex.GetType().Name}: {ex.Message}");
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Descarga la telemetría completa de una sesión cloud para reconstruir las gráficas.
+    /// </summary>
+    public async Task<List<Models.DetalleTelemetria>> ObtenerDetallesSesionAsync(int sesionId)
+    {
+        try
+        {
+            var response = await _http.GetAsync($"/api/sesiones/{sesionId}/detalles");
+            if (!response.IsSuccessStatusCode) return [];
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<Models.DetalleTelemetria>>(body, JsonOpts) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiSync] ObtenerDetallesSesionAsync: {ex.GetType().Name}: {ex.Message}");
+            return [];
+        }
+    }
+
     /// <summary>
     /// Llama a <c>GET /api/status</c> para verificar disponibilidad sin enviar datos.
     /// Útil para comprobar la conectividad antes de mostrar el botón activo.
