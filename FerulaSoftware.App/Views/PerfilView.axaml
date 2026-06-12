@@ -1,0 +1,129 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FerulaSoftware.App.ViewModels"
+             x:Class="FerulaSoftware.App.Views.PerfilView"
+             x:DataType="vm:PerfilViewModel"
+             Background="#0D1117">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="#161B22"
+                BorderBrush="#30363D"
+                BorderThickness="0,0,0,1"
+                Padding="28,20">
+            <StackPanel Spacing="4">
+                <TextBlock Text="MI PERFIL"
+                           Foreground="#8B949E" FontSize="11" FontWeight="Bold"
+                           LetterSpacing="1.5"/>
+                <TextBlock Text="Datos de tu cuenta"
+                           Foreground="#E6EDF3" FontSize="20" FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Contenido ──────────────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1" Padding="28,24,28,24">
+            <StackPanel Spacing="24" MaxWidth="480">
+
+                <!-- Tarjeta de identidad -->
+                <Border Background="#161B22"
+                        BorderBrush="#30363D"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="28,24">
+                    <StackPanel Spacing="20">
+
+                        <!-- Avatar + nombre + rol -->
+                        <StackPanel Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+
+                            <!-- Círculo con iniciales -->
+                            <Border Background="#21262D"
+                                    BorderBrush="#30363D"
+                                    BorderThickness="2"
+                                    CornerRadius="36"
+                                    Width="72" Height="72">
+                                <TextBlock Text="{Binding Iniciales}"
+                                           FontSize="24" FontWeight="Bold"
+                                           Foreground="#E6EDF3"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding NombreCompleto}"
+                                           FontSize="20" FontWeight="SemiBold"
+                                           Foreground="#E6EDF3"/>
+                                <!-- Badge de rol -->
+                                <Border Background="#21262D"
+                                        BorderBrush="{Binding RolColor}"
+                                        BorderThickness="1"
+                                        CornerRadius="12"
+                                        Padding="10,4"
+                                        HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding RolTexto}"
+                                               Foreground="{Binding RolColor}"
+                                               FontSize="11" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Separator Background="#30363D" Height="1"/>
+
+                        <!-- Campos de info -->
+                        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,16,Auto,16,Auto">
+
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                       Text="Nombre" Foreground="#8B949E" FontSize="13"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding Nombre}"
+                                       Foreground="#E6EDF3" FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                       Text="Apellido" Foreground="#8B949E" FontSize="13"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                       Text="{Binding Apellido}"
+                                       Foreground="#E6EDF3" FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0"
+                                       Text="Correo" Foreground="#8B949E" FontSize="13"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1"
+                                       Text="{Binding Email}"
+                                       Foreground="#4CC9F0" FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+
+                        </Grid>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- Aviso contraseña -->
+                <Border Background="#161B22"
+                        BorderBrush="#30363D"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16,12">
+                    <TextBlock Text="🔒  La contraseña se almacena como hash SHA-256 y no puede visualizarse."
+                               Foreground="#6E7681" FontSize="12" TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Botón cerrar sesión -->
+                <Button Content="↩   Cerrar Sesión"
+                        Command="{Binding LogoutCommand}"
+                        Classes="btn-secondary"
+                        FontSize="14"
+                        Foreground="#E63946"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>
