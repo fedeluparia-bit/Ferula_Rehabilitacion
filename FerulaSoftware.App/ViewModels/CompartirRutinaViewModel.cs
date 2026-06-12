@@ -14,10 +14,11 @@ public sealed partial class CompartirRutinaViewModel : ViewModelBase
     private readonly Func<AppDbContext> _dbFactory;
     private readonly ApiSyncService     _apiSync;
 
-    [ObservableProperty] private string _emailDestinatario    = string.Empty;
-    [ObservableProperty] private int    _modoActivo           = 0;
-    [ObservableProperty] private int    _repeticionesObjetivo = 10;
-    [ObservableProperty] private bool   _esTerapeuta          = false;
+    [ObservableProperty] private string  _emailDestinatario    = string.Empty;
+    [ObservableProperty] private int     _modoActivo           = 0;
+    // decimal? para coincidir con NumericUpDown.Value (Avalonia); se castea a int al enviar.
+    [ObservableProperty] private decimal? _repeticionesObjetivo = 10;
+    [ObservableProperty] private bool    _esTerapeuta          = false;
     [ObservableProperty] private bool   _enviando             = false;
     [ObservableProperty] private string _mensajeEstado        = string.Empty;
     [ObservableProperty] private bool   _mensajeEsError       = false;
@@ -101,7 +102,7 @@ public sealed partial class CompartirRutinaViewModel : ViewModelBase
                 EsTerapeuta,
                 EmailDestinatario.Trim(),
                 ModoActivo,
-                RepeticionesObjetivo);
+                (int)(RepeticionesObjetivo ?? 10));
 
             if (noEncontrado)
             {
