@@ -350,11 +350,14 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
             await OnRutinaCompletada(rutinaIdSnapshot.Value);
     }
 
-    // ── Inicialización del paciente demo ─────────────────────────────────────
+    // ── Inicialización del paciente local ────────────────────────────────────
 
     /// <summary>
-    /// Garantiza que exista al menos un Paciente en la BD y almacena su Id.
-    /// Se ejecuta una vez al crear el ViewModel (fire-and-forget desde el constructor).
+    /// Resuelve (o crea) el registro Paciente en SQLite que recibirá las sesiones.
+    ///
+    /// · Usuario logueado → busca Paciente por Nombre+Apellido del usuario; lo crea si no existe.
+    ///   Garantiza que las sesiones de Federico queden bajo su propio registro, no bajo Demo.
+    /// · Sin login (modo demo) → toma el primer Paciente o crea "Paciente Demo".
     /// </summary>
     private async Task InicializarPacienteDummyAsync()
     {
@@ -362,17 +365,40 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         {
             await using var db = _dbFactory();
 
-            var paciente = await db.Pacientes.FirstOrDefaultAsync();
-            if (paciente is null)
+            var usuario  = ApiSyncService.UsuarioActual;
+            Paciente? paciente;
+
+            if (usuario is not null)
             {
-                paciente = new Paciente
+                paciente = await db.Pacientes.FirstOrDefaultAsync(
+                    p => p.Nombre == usuario.Nombre && p.Apellido == usuario.Apellido);
+
+                if (paciente is null)
                 {
-                    Nombre      = "Paciente",
-                    Apellido    = "Demo",
-                    FechaInicio = DateTime.UtcNow
-                };
-                db.Pacientes.Add(paciente);
-                await db.SaveChangesAsync();
+                    paciente = new Paciente
+                    {
+                        Nombre      = usuario.Nombre,
+                        Apellido    = usuario.Apellido,
+                        FechaInicio = DateTime.UtcNow
+                    };
+                    db.Pacientes.Add(paciente);
+                    await db.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                paciente = await db.Pacientes.FirstOrDefaultAsync();
+                if (paciente is null)
+                {
+                    paciente = new Paciente
+                    {
+                        Nombre      = "Paciente",
+                        Apellido    = "Demo",
+                        FechaInicio = DateTime.UtcNow
+                    };
+                    db.Pacientes.Add(paciente);
+                    await db.SaveChangesAsync();
+                }
             }
 
             _pacienteIdActual = paciente.Id;
