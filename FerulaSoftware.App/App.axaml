@@ -97,7 +97,7 @@
         <!-- BorderThickness="2,0,0,0" reserva espacio siempre → sin salto de layout en hover -->
         <Style Selector="Button.nav-btn">
             <Setter Property="Background"      Value="Transparent"/>
-            <Setter Property="Foreground"      Value="#8B949E"/>
+            <Setter Property="Foreground"      Value="#C9D1D9"/>
             <Setter Property="BorderBrush"     Value="Transparent"/>
             <Setter Property="BorderThickness" Value="2,0,0,0"/>
             <Setter Property="CornerRadius"    Value="0,6,6,0"/>
