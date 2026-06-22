@@ -60,6 +60,13 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     /// <summary>Id del paciente activo (resuelto asíncronamente en el constructor).</summary>
     private int _pacienteIdActual;
 
+    /// <summary>
+    /// Controla si la gráfica sigue recibiendo puntos. Se activa al Iniciar una
+    /// rutina y se congela al Detener / E-Stop / fin natural, dejando visible la
+    /// última ventana sin seguir desplazándose.
+    /// </summary>
+    private bool _graficaActiva;
+
     // ── Propiedades observables ───────────────────────────────────────────────
 
     [ObservableProperty] private int    _estadoSistema;
@@ -201,6 +208,7 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         RepeticionesHechas = 0;
         _bufferTelemetria.Clear();
         ResetGrafica();   // ventana limpia al comenzar cada rutina
+        _graficaActiva = true;   // reanuda el dibujo de la gráfica
 
         _sesionActual = new Sesion
         {
@@ -223,6 +231,7 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task StopAsync()
     {
+        _graficaActiva = false;   // congela la gráfica de inmediato
         await _ws.SendCommandAsync(new EspCommand("stop", 0));
         await FlushSesionAsync();
     }
@@ -234,6 +243,7 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task EStopAsync()
     {
+        _graficaActiva = false;   // congela la gráfica de inmediato
         await _ws.SendCommandAsync(new EspCommand("estop", 0));
         await FlushSesionAsync();
     }
@@ -282,8 +292,13 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
             int pMax = Math.Max(m0.Presion, m1.Presion);
             if (pMax > PresionMaxima) PresionMaxima = pMax;
 
-            AppendDataPoint(DatosPresion0, m0.Presion);
-            AppendDataPoint(DatosPresion1, m1.Presion);
+            // Solo desplaza la gráfica mientras la rutina esté en curso.
+            // Tras Detener / E-Stop / fin natural queda congelada.
+            if (_graficaActiva)
+            {
+                AppendDataPoint(DatosPresion0, m0.Presion);
+                AppendDataPoint(DatosPresion1, m1.Presion);
+            }
 
             // ── Buffering — solo durante EJECUTANDO ───────────────────────────
             // No se bufferiza el paquete de REPOSO: ese valor ya está capturado
@@ -303,7 +318,10 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
 
             // ── Auto-flush en fin natural de rutina ───────────────────────────
             if (finNatural)
+            {
+                _graficaActiva = false;   // congela la gráfica al terminar la rutina
                 _ = FlushSesionAsync();
+            }
         });
     }
 
