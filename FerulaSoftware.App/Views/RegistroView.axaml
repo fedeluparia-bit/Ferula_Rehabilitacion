@@ -6,100 +6,113 @@
              Background="#0D1117">
 
     <Grid>
+        <!-- Tarjeta con sombra elevada (consistente con LoginView) -->
         <Border Background="#161B22"
                 BorderBrush="#30363D"
                 BorderThickness="1"
-                CornerRadius="10"
+                CornerRadius="12"
                 Padding="40,32"
-                Width="440"
+                Width="460"
                 VerticalAlignment="Center"
-                HorizontalAlignment="Center">
+                HorizontalAlignment="Center"
+                BoxShadow="0 8 40 0 #40000000, 0 2 8 0 #25000000">
             <StackPanel Spacing="16">
 
-                <!-- Encabezado -->
-                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                <!-- ── Encabezado ─────────────────────────────────────────── -->
+                <StackPanel Spacing="6" HorizontalAlignment="Center">
                     <TextBlock Text="🦾  Férula de Rehabilitación"
-                               FontSize="20" FontWeight="Bold"
+                               FontSize="22" FontWeight="Bold"
                                Foreground="#E6EDF3"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Crear nueva cuenta"
-                               FontSize="13" Foreground="#8B949E"
+                               FontSize="13" Foreground="#6E7681"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
 
-                <Separator Background="#30363D" Height="1"/>
+                <!-- Línea de acento degradada -->
+                <Border Height="2" Width="60" HorizontalAlignment="Center" CornerRadius="1">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Offset="0" Color="#1F6FEB"/>
+                            <GradientStop Offset="1" Color="#4CC9F0"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
 
-                <!-- Nombre y Apellido -->
+                <!-- ── Nombre y Apellido ──────────────────────────────────── -->
                 <Grid ColumnDefinitions="*,12,*">
                     <StackPanel Grid.Column="0" Spacing="6">
-                        <TextBlock Text="Nombre" Foreground="#C9D1D9" FontSize="13"/>
+                        <TextBlock Text="NOMBRE" Foreground="#8B949E"
+                                   FontSize="10" FontWeight="SemiBold" LetterSpacing="1"/>
                         <TextBox Text="{Binding Nombre}"
                                  Background="#0D1117" Foreground="#E6EDF3"
-                                 BorderBrush="#30363D" CornerRadius="5"
-                                 Padding="10,8" FontSize="14"
+                                 BorderBrush="#30363D" CornerRadius="6"
+                                 Padding="12,10" FontSize="14"
                                  Watermark="Juan"
                                  IsEnabled="{Binding !Cargando}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Spacing="6">
-                        <TextBlock Text="Apellido" Foreground="#C9D1D9" FontSize="13"/>
+                        <TextBlock Text="APELLIDO" Foreground="#8B949E"
+                                   FontSize="10" FontWeight="SemiBold" LetterSpacing="1"/>
                         <TextBox Text="{Binding Apellido}"
                                  Background="#0D1117" Foreground="#E6EDF3"
-                                 BorderBrush="#30363D" CornerRadius="5"
-                                 Padding="10,8" FontSize="14"
+                                 BorderBrush="#30363D" CornerRadius="6"
+                                 Padding="12,10" FontSize="14"
                                  Watermark="García"
                                  IsEnabled="{Binding !Cargando}"/>
                     </StackPanel>
                 </Grid>
 
-                <!-- Correo -->
+                <!-- ── Correo ─────────────────────────────────────────────── -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Correo electrónico" Foreground="#C9D1D9" FontSize="13"/>
+                    <TextBlock Text="CORREO ELECTRÓNICO" Foreground="#8B949E"
+                               FontSize="10" FontWeight="SemiBold" LetterSpacing="1"/>
                     <TextBox Text="{Binding Email}"
                              Background="#0D1117" Foreground="#E6EDF3"
-                             BorderBrush="#30363D" CornerRadius="5"
-                             Padding="10,8" FontSize="14"
+                             BorderBrush="#30363D" CornerRadius="6"
+                             Padding="12,10" FontSize="14"
                              Watermark="correo@ejemplo.com"
                              IsEnabled="{Binding !Cargando}"/>
                 </StackPanel>
 
-                <!-- Contraseña -->
+                <!-- ── Contraseña ─────────────────────────────────────────── -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Contraseña (mínimo 6 caracteres)"
-                               Foreground="#C9D1D9" FontSize="13"/>
+                    <TextBlock Text="CONTRASEÑA (mínimo 6 caracteres)" Foreground="#8B949E"
+                               FontSize="10" FontWeight="SemiBold" LetterSpacing="1"/>
                     <TextBox Text="{Binding Password}"
                              PasswordChar="●"
                              Background="#0D1117" Foreground="#E6EDF3"
-                             BorderBrush="#30363D" CornerRadius="5"
-                             Padding="10,8" FontSize="14"
+                             BorderBrush="#30363D" CornerRadius="6"
+                             Padding="12,10" FontSize="14"
                              Watermark="Contraseña segura"
                              IsEnabled="{Binding !Cargando}"/>
                 </StackPanel>
 
-                <!-- Terapeuta -->
+                <!-- ── Terapeuta ──────────────────────────────────────────── -->
                 <CheckBox IsChecked="{Binding EsTerapeuta}"
                           Foreground="#C9D1D9" FontSize="13"
                           IsEnabled="{Binding !Cargando}">
                     Registrarme como Terapeuta Verificado
                 </CheckBox>
 
-                <!-- Banner error -->
+                <!-- ── Banner error ───────────────────────────────────────── -->
                 <Border Background="#2D1111" BorderBrush="#F85149" BorderThickness="1"
-                        CornerRadius="5" Padding="10,7"
+                        CornerRadius="6" Padding="12,8"
                         IsVisible="{Binding Error,
                             Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="{Binding Error}"
                                Foreground="#F85149" FontSize="12" TextWrapping="Wrap"/>
                 </Border>
 
-                <!-- Banner éxito -->
+                <!-- ── Banner éxito ───────────────────────────────────────── -->
                 <Border Background="#0D2A1A" BorderBrush="#3FB950" BorderThickness="1"
-                        CornerRadius="5" Padding="10,7"
+                        CornerRadius="6" Padding="12,8"
                         IsVisible="{Binding Exitoso}">
                     <TextBlock Text="✔  Cuenta creada. Redirigiendo al login..."
                                Foreground="#3FB950" FontSize="12"/>
                 </Border>
 
-                <!-- Botón crear cuenta -->
+                <!-- ── Botón crear cuenta ─────────────────────────────────── -->
                 <Button Command="{Binding CrearCuentaCommand}"
                         IsEnabled="{Binding !Cargando}"
                         Classes="btn-primary"
@@ -116,7 +129,7 @@
                     </Panel>
                 </Button>
 
-                <!-- Volver al login -->
+                <!-- ── Volver al login ────────────────────────────────────── -->
                 <Button Content="← Volver al Login"
                         Command="{Binding VolverAlLoginCommand}"
                         IsEnabled="{Binding !Cargando}"

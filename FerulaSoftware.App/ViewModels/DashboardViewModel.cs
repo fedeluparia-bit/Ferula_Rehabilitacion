@@ -30,6 +30,11 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
             ? $"{u.Nombre} {u.Apellido}".Trim()
             : "Invitado";
 
+    public string InicialUsuario =>
+        ApiSyncService.UsuarioActual?.Nombre is { Length: > 0 } n
+            ? n[0].ToString().ToUpperInvariant()
+            : "?";
+
     [ObservableProperty] private ViewModelBase _vistaInterior;
 
     public DashboardViewModel(
