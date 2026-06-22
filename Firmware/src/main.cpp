@@ -19,6 +19,12 @@ portMUX_TYPE stateMux = portMUX_INITIALIZER_UNLOCKED;
 volatile uint32_t presionSimuladaApp  = 0;
 volatile bool     simulacionUIActiva  = false;
 
+// ── Homing: vuelta a 0° solicitada por la App ("Detener Sesión") ─────────────
+// Escrito por Core 0 (applyCommand, cmd "home"); leído/limpiado por Core 1.
+// Mientras es true, Core 1 lleva ambos servos a SERVO_MIN_DEG sin importar el
+// estado, y lo pone en false al llegar. bool volátil → atómico en Xtensa.
+volatile bool homingActivo = false;
+
 // ── ArduinoJson: pools globales, sin heap dinámico (regla: no String) ────────
 StaticJsonDocument<JSON_TX_SIZE> docTx;
 StaticJsonDocument<JSON_RX_SIZE> docRx;
@@ -174,7 +180,19 @@ void TaskControl(void* pvParameters) {
         //              Si no hay fuerza → motor queda quieto esperando.
         //   · CLOSING: siempre automático (vuelta pasiva en ambos modos).
         //
-        if (estadoLocal == ESTADO_EJECUTANDO) {
+        if (homingActivo) {
+            // ── Homing ("Detener Sesión"): vuelta gradual a 0° desde donde esté,
+            //    con prioridad sobre cualquier estado. Al llegar, libera el flag.
+            ang0 -= SERVO_STEP_DEG;
+            ang1 -= SERVO_STEP_DEG;
+            if (ang0 <= SERVO_MIN_DEG) ang0 = SERVO_MIN_DEG;
+            if (ang1 <= SERVO_MIN_DEG) ang1 = SERVO_MIN_DEG;
+            if (ang0 == SERVO_MIN_DEG && ang1 == SERVO_MIN_DEG) {
+                homingActivo = false;
+                phase        = MotionPhase::IDLE;
+            }
+
+        } else if (estadoLocal == ESTADO_EJECUTANDO) {
 
             uint8_t repHechas;
             portENTER_CRITICAL(&stateMux);
@@ -302,21 +320,42 @@ void applyCommand(const char* cmd, int val, int mod) {
         return;
     }
 
+    // "home" (Detener Sesión): Core 1 devuelve los servos a 0° gradualmente.
+    // Se marca REPOSO (no E-STOP) y se activa el homing.
+    if (strcmp(cmd, "home") == 0) {
+        homingActivo = true;
+        portENTER_CRITICAL(&stateMux);
+        sysState.estado = ESTADO_REPOSO;
+        portEXIT_CRITICAL(&stateMux);
+        return;
+    }
+
     portENTER_CRITICAL(&stateMux);
     {
         if (strcmp(cmd, "start") == 0) {
+            homingActivo                  = false;                       // cancela homing pendiente
             sysState.modo                 = static_cast<uint8_t>(mod);   // fijar modo antes de arrancar
             sysState.repeticionesObjetivo = static_cast<uint8_t>(val);
             sysState.repeticionesHechas   = 0;
             sysState.estado               = ESTADO_EJECUTANDO;
 
         } else if (strcmp(cmd, "stop") == 0) {
+            // Pausa: congela los servos en su posición; NO resetea el contador
+            // de repeticiones para poder reanudar después con "resume".
             sysState.estado = ESTADO_REPOSO;
+
+        } else if (strcmp(cmd, "resume") == 0) {
+            // Reanuda desde donde se pausó: mantiene ángulo y repeticionesHechas.
+            homingActivo = false;
+            if (sysState.repeticionesHechas < sysState.repeticionesObjetivo) {
+                sysState.estado = ESTADO_EJECUTANDO;
+            }
 
         } else if (strcmp(cmd, "set_mod") == 0) {
             sysState.modo = static_cast<uint8_t>(val);
 
         } else if (strcmp(cmd, "estop") == 0) {
+            homingActivo    = false;
             sysState.estado = ESTADO_ESTOP;
         }
     }
