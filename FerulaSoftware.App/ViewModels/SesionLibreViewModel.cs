@@ -114,6 +114,22 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         new Axis { Name = "Presión FSR (0–4095)", MinLimit = 0, MaxLimit = 4095 }
     ];
 
+    // Eje X de ANCHO FIJO: bloqueado a [0, MaxDataPoints-1]. Como la colección
+    // siempre tiene MaxDataPoints puntos (se pre-rellena con nulos), la ventana
+    // nunca se auto-escala → los puntos no se comprimen, solo se desplazan.
+    // El índice se etiqueta como "segundos atrás": el más reciente (derecha) = 0 s.
+    public Axis[] XAxesPresion { get; } =
+    [
+        new Axis
+        {
+            Name      = "Tiempo (s)",
+            MinLimit  = 0,
+            MaxLimit  = MaxDataPoints - 1,
+            MinStep   = 10,   // 10 muestras a 10 Hz ≈ 1 s entre etiquetas
+            Labeler   = value => $"{(value - (MaxDataPoints - 1)) / 10.0:0}s"
+        }
+    ];
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public SesionLibreViewModel(IWebSocketService ws, Func<AppDbContext> dbFactory)
@@ -128,15 +144,23 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         [
             new LineSeries<ObservableValue>
             {
-                Values = DatosPresion0,
-                Name   = "FSR Motor 0 — Índice/Medio"
+                Values         = DatosPresion0,
+                Name           = "FSR Motor 0 — Índice/Medio",
+                GeometrySize   = 5,     // puntos pequeños → ventana limpia, sin saturar
+                LineSmoothness = 0.3
             },
             new LineSeries<ObservableValue>
             {
-                Values = DatosPresion1,
-                Name   = "FSR Motor 1 — Anular/Meñique"
+                Values         = DatosPresion1,
+                Name           = "FSR Motor 1 — Anular/Meñique",
+                GeometrySize   = 5,
+                LineSmoothness = 0.3
             }
         ];
+
+        // Arranca con la ventana llena de huecos (nulos): ancho fijo desde el
+        // primer frame, así no hay fase de "compactado" mientras se llena.
+        ResetGrafica();
 
         // Inicialización asíncrona del paciente dummy.
         // Fire-and-forget controlado: el Id estará disponible mucho antes de
@@ -176,6 +200,7 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         PresionMaxima      = 0;
         RepeticionesHechas = 0;
         _bufferTelemetria.Clear();
+        ResetGrafica();   // ventana limpia al comenzar cada rutina
 
         _sesionActual = new Sesion
         {
@@ -413,8 +438,26 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
 
     private static void AppendDataPoint(ObservableCollection<ObservableValue> col, double valor)
     {
-        if (col.Count >= MaxDataPoints) col.RemoveAt(0);
+        // Añade al final y descarta el más viejo → ventana deslizante de tamaño
+        // constante (MaxDataPoints). El frente desaparece a medida que entra lo nuevo.
         col.Add(new ObservableValue(valor));
+        while (col.Count > MaxDataPoints) col.RemoveAt(0);
+    }
+
+    /// <summary>
+    /// Re-inicializa ambas series con MaxDataPoints puntos nulos. Mantener la
+    /// colección siempre llena fija el ancho del eje X: la gráfica se desplaza
+    /// en lugar de comprimirse mientras llega la telemetría.
+    /// </summary>
+    private void ResetGrafica()
+    {
+        DatosPresion0.Clear();
+        DatosPresion1.Clear();
+        for (int i = 0; i < MaxDataPoints; i++)
+        {
+            DatosPresion0.Add(new ObservableValue());   // Value = null → hueco
+            DatosPresion1.Add(new ObservableValue());
+        }
     }
 
     public void Dispose()
