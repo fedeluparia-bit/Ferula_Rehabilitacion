@@ -151,10 +151,19 @@
                     <Button Content="▶   Iniciar Rutina"
                             Command="{Binding IniciarRutinaCommand}"
                             CommandParameter="{Binding RepeticionesObjetivo}"
+                            IsEnabled="{Binding !SesionEnCurso}"
                             Classes="btn-primary" FontSize="15"/>
 
-                    <Button Content="⏸   Detener"
-                            Command="{Binding StopCommand}"
+                    <!-- Conmuta entre Pausar y Reanudar Sesión -->
+                    <Button Content="{Binding TextoBotonPausa}"
+                            Command="{Binding PausarReanudarCommand}"
+                            IsEnabled="{Binding SesionEnCurso}"
+                            Classes="btn-secondary" FontSize="14"/>
+
+                    <!-- Lleva los motores a 0° y finaliza la sesión -->
+                    <Button Content="⏹   Detener Sesión"
+                            Command="{Binding DetenerSesionCommand}"
+                            IsEnabled="{Binding SesionEnCurso}"
                             Classes="btn-secondary" FontSize="14"/>
 
                     <Separator Background="#30363D" Height="1"/>

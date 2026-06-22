@@ -60,6 +60,13 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     /// <summary>Id del paciente activo (resuelto asíncronamente en el constructor).</summary>
     private int _pacienteIdActual;
 
+    /// <summary>
+    /// Controla si la gráfica sigue recibiendo puntos. Se activa al Iniciar una
+    /// rutina y se congela al Detener / E-Stop / fin natural, dejando visible la
+    /// última ventana sin seguir desplazándose.
+    /// </summary>
+    private bool _graficaActiva;
+
     // ── Propiedades observables ───────────────────────────────────────────────
 
     [ObservableProperty] private int    _estadoSistema;
@@ -83,6 +90,20 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
 
     /// <summary>Descripción de la rutina activa que se muestra en el banner.</summary>
     [ObservableProperty] private string _bannerRutina    = string.Empty;
+
+    // ── Estado de sesión / pausa ──────────────────────────────────────────────
+    /// <summary>True mientras hay una sesión iniciada (en curso o en pausa).
+    /// Habilita Pausar/Reanudar y Detener Sesión, y bloquea Iniciar.</summary>
+    [ObservableProperty] private bool _sesionEnCurso;
+
+    /// <summary>True cuando la sesión está pausada (motores congelados).</summary>
+    [ObservableProperty] private bool _enPausa;
+
+    /// <summary>Texto del botón Pausar/Reanudar según el estado de pausa.</summary>
+    public string TextoBotonPausa => EnPausa ? "▶   Reanudar Sesión" : "⏸   Pausar";
+
+    partial void OnEnPausaChanged(bool value) =>
+        OnPropertyChanged(nameof(TextoBotonPausa));
 
     /// <summary>ID de la rutina en la nube que disparó esta sesión. Null en sesión libre.</summary>
     private int? _rutinaId;
@@ -201,6 +222,9 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         RepeticionesHechas = 0;
         _bufferTelemetria.Clear();
         ResetGrafica();   // ventana limpia al comenzar cada rutina
+        _graficaActiva = true;   // reanuda el dibujo de la gráfica
+        SesionEnCurso  = true;
+        EnPausa        = false;
 
         _sesionActual = new Sesion
         {
@@ -216,14 +240,45 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Detiene la rutina de forma controlada.
-    /// Envía "stop" al ESP32 y vuelca el buffer como fallback (si el ESP32
-    /// no respondiera con REPOSO, los datos no se perderían).
+    /// Pausa o reanuda la sesión en curso (botón conmutador).
+    ///   · Pausar:  envía "stop" → el ESP32 congela los servos en su posición.
+    ///              La sesión NO se vuelca; el buffer y el contador se conservan.
+    ///   · Reanudar: envía "resume" → el ESP32 continúa desde el mismo ángulo y
+    ///              repetición. El cronómetro se pausa/reanuda para no contar el
+    ///              tiempo en pausa.
     /// </summary>
     [RelayCommand]
-    private async Task StopAsync()
+    private async Task PausarReanudarAsync()
     {
-        await _ws.SendCommandAsync(new EspCommand("stop", 0));
+        if (!SesionEnCurso) return;
+
+        if (!EnPausa)
+        {
+            EnPausa        = true;
+            _graficaActiva = false;          // congela la gráfica
+            _stopwatchSesion.Stop();         // pausa el cronómetro de sesión
+            await _ws.SendCommandAsync(new EspCommand("stop", 0));
+        }
+        else
+        {
+            EnPausa        = false;
+            _graficaActiva = true;           // reanuda la gráfica
+            _stopwatchSesion.Start();        // continúa el cronómetro
+            await _ws.SendCommandAsync(new EspCommand("resume", 0));
+        }
+    }
+
+    /// <summary>
+    /// Termina la sesión: ordena al ESP32 llevar los motores a 0° de forma
+    /// gradual ("home") y vuelca la sesión a la base de datos.
+    /// </summary>
+    [RelayCommand]
+    private async Task DetenerSesionAsync()
+    {
+        _graficaActiva = false;   // congela la gráfica
+        EnPausa        = false;
+        SesionEnCurso  = false;
+        await _ws.SendCommandAsync(new EspCommand("home", 0));   // motores → 0°
         await FlushSesionAsync();
     }
 
@@ -234,6 +289,9 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task EStopAsync()
     {
+        _graficaActiva = false;   // congela la gráfica de inmediato
+        EnPausa        = false;
+        SesionEnCurso  = false;
         await _ws.SendCommandAsync(new EspCommand("estop", 0));
         await FlushSesionAsync();
     }
@@ -260,10 +318,13 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
         Dispatcher.UIThread.Post(() =>
         {
             // ── Detectar fin natural de rutina ANTES de actualizar el estado ──
-            // La transición Ejecutando→Reposo en el firmware indica que se
-            // completaron todas las repeticiones objetivo.
+            // La transición Ejecutando→Reposo indica fin SOLO si se alcanzó el
+            // objetivo de repeticiones. Así una PAUSA (que también pasa a Reposo)
+            // no se confunde con el final de la rutina.
             bool finNatural = _estadoSistemaAnterior == EstadoEjecutando
-                           && packet.Estado          == EstadoReposo;
+                           && packet.Estado          == EstadoReposo
+                           && _sesionActual is not null
+                           && packet.Repeticiones    >= _sesionActual.RepeticionesObjetivo;
 
             // ── Actualizar observables para la UI ─────────────────────────────
             EstadoSistema              = packet.Estado;
@@ -282,8 +343,13 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
             int pMax = Math.Max(m0.Presion, m1.Presion);
             if (pMax > PresionMaxima) PresionMaxima = pMax;
 
-            AppendDataPoint(DatosPresion0, m0.Presion);
-            AppendDataPoint(DatosPresion1, m1.Presion);
+            // Solo desplaza la gráfica mientras la rutina esté en curso.
+            // Tras Detener / E-Stop / fin natural queda congelada.
+            if (_graficaActiva)
+            {
+                AppendDataPoint(DatosPresion0, m0.Presion);
+                AppendDataPoint(DatosPresion1, m1.Presion);
+            }
 
             // ── Buffering — solo durante EJECUTANDO ───────────────────────────
             // No se bufferiza el paquete de REPOSO: ese valor ya está capturado
@@ -303,7 +369,12 @@ public sealed partial class SesionLibreViewModel : ViewModelBase, IDisposable
 
             // ── Auto-flush en fin natural de rutina ───────────────────────────
             if (finNatural)
+            {
+                _graficaActiva = false;   // congela la gráfica al terminar la rutina
+                EnPausa        = false;
+                SesionEnCurso  = false;
                 _ = FlushSesionAsync();
+            }
         });
     }
 
