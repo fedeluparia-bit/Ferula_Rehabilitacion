@@ -6,73 +6,87 @@
              Background="#0D1117">
 
     <Grid>
+        <!-- Tarjeta principal con sombra elevada -->
         <Border Background="#161B22"
                 BorderBrush="#30363D"
                 BorderThickness="1"
-                CornerRadius="10"
+                CornerRadius="12"
                 Padding="40,36"
-                Width="400"
+                Width="420"
                 VerticalAlignment="Center"
-                HorizontalAlignment="Center">
+                HorizontalAlignment="Center"
+                BoxShadow="0 8 40 0 #40000000, 0 2 8 0 #25000000">
             <StackPanel Spacing="22">
 
-                <!-- Encabezado -->
-                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                <!-- ── Encabezado ─────────────────────────────────────────── -->
+                <StackPanel Spacing="6" HorizontalAlignment="Center">
                     <TextBlock Text="🦾  Férula de Rehabilitación"
-                               FontSize="20" FontWeight="Bold"
+                               FontSize="22" FontWeight="Bold"
                                Foreground="#E6EDF3"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Sistema de Gestión Clínica — PoC v1.0"
-                               FontSize="12" Foreground="#8B949E"
+                               FontSize="12" Foreground="#6E7681"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
 
-                <Separator Background="#30363D" Height="1"/>
+                <!-- Línea de acento degradada (reemplaza al Separator plano) -->
+                <Border Height="2" Width="60" HorizontalAlignment="Center" CornerRadius="1">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Offset="0" Color="#1F6FEB"/>
+                            <GradientStop Offset="1" Color="#4CC9F0"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
 
-                <!-- Correo -->
+                <!-- ── Correo ─────────────────────────────────────────────── -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Correo electrónico" Foreground="#C9D1D9" FontSize="13"/>
+                    <TextBlock Text="CORREO ELECTRÓNICO"
+                               Foreground="#8B949E" FontSize="10"
+                               FontWeight="SemiBold" LetterSpacing="1"/>
                     <TextBox Text="{Binding Email}"
                              Background="#0D1117"
                              Foreground="#E6EDF3"
                              BorderBrush="#30363D"
-                             CornerRadius="5"
-                             Padding="10,8"
+                             CornerRadius="6"
+                             Padding="12,10"
                              FontSize="14"
                              Watermark="correo@ejemplo.com"
                              IsEnabled="{Binding !Cargando}"/>
                 </StackPanel>
 
-                <!-- Contraseña -->
+                <!-- ── Contraseña ─────────────────────────────────────────── -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Contraseña" Foreground="#C9D1D9" FontSize="13"/>
+                    <TextBlock Text="CONTRASEÑA"
+                               Foreground="#8B949E" FontSize="10"
+                               FontWeight="SemiBold" LetterSpacing="1"/>
                     <TextBox Text="{Binding Contrasena}"
                              PasswordChar="●"
                              Background="#0D1117"
                              Foreground="#E6EDF3"
                              BorderBrush="#30363D"
-                             CornerRadius="5"
-                             Padding="10,8"
+                             CornerRadius="6"
+                             Padding="12,10"
                              FontSize="14"
                              Watermark="Ingresá tu contraseña"
                              IsEnabled="{Binding !Cargando}"/>
                 </StackPanel>
 
-                <!-- Error -->
+                <!-- ── Banner de error ───────────────────────────────────── -->
                 <Border Background="#2D1111" BorderBrush="#F85149" BorderThickness="1"
-                        CornerRadius="5" Padding="10,7"
+                        CornerRadius="6" Padding="12,8"
                         IsVisible="{Binding Error,
                             Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="{Binding Error}"
                                Foreground="#F85149" FontSize="12" TextWrapping="Wrap"/>
                 </Border>
 
-                <!-- Botón ingresar -->
+                <!-- ── Botón ingresar ─────────────────────────────────────── -->
                 <Button Command="{Binding IngresarCommand}"
                         IsEnabled="{Binding !Cargando}"
                         Classes="btn-primary"
                         FontSize="15"
-                        Margin="0,6,0,0">
+                        Margin="0,4,0,0">
                     <Panel>
                         <TextBlock Text="Ingresar"
                                    IsVisible="{Binding !Cargando}"
@@ -84,8 +98,8 @@
                     </Panel>
                 </Button>
 
-                <!-- Crear cuenta -->
-                <Button Content="Crear cuenta nueva →"
+                <!-- ── Crear cuenta ───────────────────────────────────────── -->
+                <Button Content="Crear cuenta nueva  →"
                         Command="{Binding IrARegistroCommand}"
                         IsEnabled="{Binding !Cargando}"
                         Classes="btn-secondary"

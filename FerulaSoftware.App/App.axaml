@@ -3,30 +3,28 @@
              x:Class="FerulaSoftware.App.App"
              xmlns:local="using:FerulaSoftware.App"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
     <Application.Styles>
         <FluentTheme />
 
-        <!-- ── Estilos compartidos entre todas las vistas ─────────────────── -->
-
-        <!-- Tarjeta de estadística -->
+        <!-- ── Tarjeta de estadística ─────────────────────────────────────── -->
         <Style Selector="Border.stat-card">
             <Setter Property="Background"      Value="#161B22"/>
-            <Setter Property="BorderBrush"     Value="#30363D"/>
+            <Setter Property="BorderBrush"     Value="#21262D"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius"    Value="6"/>
-            <Setter Property="Padding"         Value="16,10"/>
+            <Setter Property="CornerRadius"    Value="8"/>
+            <Setter Property="Padding"         Value="16,12"/>
             <Setter Property="Margin"          Value="0,0,12,0"/>
+            <Setter Property="BoxShadow"       Value="0 2 10 0 #1F000000"/>
         </Style>
         <Style Selector="TextBlock.stat-label">
-            <Setter Property="FontSize"    Value="10"/>
-            <Setter Property="FontWeight"  Value="SemiBold"/>
-            <Setter Property="Foreground"  Value="#8B949E"/>
+            <Setter Property="FontSize"      Value="10"/>
+            <Setter Property="FontWeight"    Value="SemiBold"/>
+            <Setter Property="Foreground"    Value="#8B949E"/>
             <Setter Property="LetterSpacing" Value="1.5"/>
         </Style>
         <Style Selector="TextBlock.stat-value">
@@ -35,9 +33,16 @@
             <Setter Property="Foreground" Value="#E6EDF3"/>
         </Style>
 
-        <!-- Botón primario (azul) -->
+        <!-- ── Botón primario — azul con degradado ──────────────────────── -->
         <Style Selector="Button.btn-primary">
-            <Setter Property="Background"     Value="#1F6FEB"/>
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                        <GradientStop Offset="0" Color="#2484FF"/>
+                        <GradientStop Offset="1" Color="#1160D0"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Foreground"     Value="White"/>
             <Setter Property="FontWeight"     Value="SemiBold"/>
             <Setter Property="CornerRadius"   Value="6"/>
@@ -46,10 +51,13 @@
             <Setter Property="HorizontalAlignment"        Value="Stretch"/>
         </Style>
         <Style Selector="Button.btn-primary:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#388BFD"/>
+            <Setter Property="Background" Value="#3D90FF"/>
+        </Style>
+        <Style Selector="Button.btn-primary:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#0E4DB8"/>
         </Style>
 
-        <!-- Botón secundario (gris) -->
+        <!-- ── Botón secundario — gris ──────────────────────────────────── -->
         <Style Selector="Button.btn-secondary">
             <Setter Property="Background"      Value="#21262D"/>
             <Setter Property="Foreground"      Value="#C9D1D9"/>
@@ -63,10 +71,13 @@
         <Style Selector="Button.btn-secondary:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#30363D"/>
         </Style>
+        <Style Selector="Button.btn-secondary:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3C444D"/>
+        </Style>
 
-        <!-- Botón E-STOP (rojo) -->
+        <!-- ── Botón E-STOP — rojo ──────────────────────────────────────── -->
         <Style Selector="Button.btn-estop">
-            <Setter Property="Background"     Value="#DA3633"/>
+            <Setter Property="Background"     Value="#B91C1C"/>
             <Setter Property="Foreground"     Value="White"/>
             <Setter Property="FontSize"       Value="18"/>
             <Setter Property="FontWeight"     Value="Bold"/>
@@ -76,26 +87,34 @@
             <Setter Property="Height"         Value="72"/>
         </Style>
         <Style Selector="Button.btn-estop:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#F85149"/>
+            <Setter Property="Background" Value="#DC2626"/>
+        </Style>
+        <Style Selector="Button.btn-estop:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#7F1D1D"/>
         </Style>
 
-        <!-- Botón de navegación lateral (sidebar) -->
+        <!-- ── Botón de navegación lateral ─────────────────────────────── -->
+        <!-- BorderThickness="2,0,0,0" reserva espacio siempre → sin salto de layout en hover -->
         <Style Selector="Button.nav-btn">
             <Setter Property="Background"      Value="Transparent"/>
-            <Setter Property="Foreground"      Value="#C9D1D9"/>
+            <Setter Property="Foreground"      Value="#8B949E"/>
             <Setter Property="BorderBrush"     Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius"    Value="6"/>
-            <Setter Property="Padding"         Value="12,9"/>
+            <Setter Property="BorderThickness" Value="2,0,0,0"/>
+            <Setter Property="CornerRadius"    Value="0,6,6,0"/>
+            <Setter Property="Padding"         Value="10,9,12,9"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="HorizontalAlignment"        Value="Stretch"/>
             <Setter Property="FontSize"        Value="13"/>
         </Style>
+        <Style Selector="Button.nav-btn:pointerover">
+            <Setter Property="BorderBrush" Value="#1F6FEB"/>
+            <Setter Property="Foreground"  Value="#E6EDF3"/>
+        </Style>
         <Style Selector="Button.nav-btn:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#21262D"/>
+            <Setter Property="Background" Value="#1E2430"/>
         </Style>
         <Style Selector="Button.nav-btn:pressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="#30363D"/>
+            <Setter Property="Background" Value="#2D3340"/>
         </Style>
 
     </Application.Styles>

@@ -14,53 +14,72 @@
                 BorderThickness="0,0,1,0">
             <DockPanel>
 
-                <!-- Cabecera de la app + usuario logueado -->
+                <!-- Cabecera: logo + usuario logueado -->
                 <Border DockPanel.Dock="Top"
                         Padding="16,16,16,14"
                         BorderBrush="#30363D"
                         BorderThickness="0,0,0,1">
-                    <StackPanel Spacing="6">
-                        <StackPanel Spacing="2">
+                    <StackPanel Spacing="10">
+
+                        <!-- Logo + app name -->
+                        <StackPanel Spacing="1">
                             <TextBlock Text="🦾  Férula PoC"
-                                       FontSize="15" FontWeight="Bold"
+                                       FontSize="16" FontWeight="Bold"
                                        Foreground="#E6EDF3"/>
-                            <TextBlock Text="Panel de Control"
-                                       FontSize="11" Foreground="#8B949E"/>
+                            <TextBlock Text="PANEL DE CONTROL"
+                                       FontSize="9" Foreground="#6E7681"
+                                       LetterSpacing="1.5" FontWeight="SemiBold"/>
                         </StackPanel>
-                        <!-- Chip del usuario logueado -->
-                        <Border Background="#21262D"
+
+                        <!-- Chip del usuario con avatar de inicial -->
+                        <Border Background="#0D1117"
                                 BorderBrush="#30363D"
                                 BorderThickness="1"
                                 CornerRadius="6"
-                                Padding="8,5">
-                            <TextBlock Text="{Binding NombreUsuario}"
-                                       Foreground="#C9D1D9"
-                                       FontSize="11"
-                                       TextTrimming="CharacterEllipsis"/>
+                                Padding="8,6">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <!-- Avatar: círculo con inicial -->
+                                <Border Background="#1F6FEB"
+                                        CornerRadius="10"
+                                        Width="22" Height="22">
+                                    <TextBlock Text="{Binding InicialUsuario}"
+                                               FontSize="10" FontWeight="Bold"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="{Binding NombreUsuario}"
+                                           Foreground="#C9D1D9"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
                         </Border>
+
                     </StackPanel>
                 </Border>
 
-                <!-- Botón Cerrar Sesión anclado al fondo -->
+                <!-- Cerrar Sesión — anclado al fondo -->
                 <Button DockPanel.Dock="Bottom"
                         Content="↩   Cerrar Sesión"
                         Command="{Binding LogoutCommand}"
                         Classes="nav-btn"
                         Foreground="#E63946"
-                        Margin="8,4,8,12"/>
+                        Margin="0,4,8,12"/>
 
-                <!-- Botón Mi Perfil justo sobre el logout -->
+                <!-- Mi Perfil — sobre el logout -->
                 <Button DockPanel.Dock="Bottom"
                         Content="👤   Mi Perfil"
                         Command="{Binding NavegarAPerfilCommand}"
                         Classes="nav-btn"
-                        Margin="8,8,8,0"/>
+                        Margin="0,8,8,0"/>
 
                 <!-- Ítems de navegación -->
-                <StackPanel Margin="8,16,8,0" Spacing="2">
+                <StackPanel Margin="0,16,8,0" Spacing="2">
+
                     <TextBlock Text="NAVEGACIÓN"
                                Classes="stat-label"
-                               Margin="12,0,0,8"/>
+                               Margin="14,0,0,8"/>
                     <Button Content="📋   Sesión Libre"
                             Command="{Binding NavegarASesionLibreCommand}"
                             Classes="nav-btn"/>
@@ -71,23 +90,24 @@
                             Command="{Binding NavegarAInformesCommand}"
                             Classes="nav-btn"/>
 
-                    <Separator Background="#30363D" Margin="12,8,12,4"/>
+                    <Separator Background="#21262D" Margin="14,10,14,6"/>
+
                     <TextBlock Text="COMUNIDAD"
                                Classes="stat-label"
-                               Margin="12,0,0,8"/>
+                               Margin="14,0,0,8"/>
                     <Button Content="📬   Bandeja de Entrada"
                             Command="{Binding NavegarABandejaEntradaCommand}"
                             Classes="nav-btn"/>
                     <Button Content="📤   Compartir Rutina"
                             Command="{Binding NavegarACompartirRutinaCommand}"
                             Classes="nav-btn"/>
+
                 </StackPanel>
 
             </DockPanel>
         </Border>
 
         <!-- ── CONTENIDO INTERIOR ───────────────────────────────────────────── -->
-        <!-- El ViewLocator resuelve VistaInterior a su UserControl correspondiente -->
         <ContentControl Grid.Column="1"
                         Content="{Binding VistaInterior}"/>
 
