@@ -5,61 +5,68 @@
              x:DataType="vm:DashboardViewModel"
              Background="#0D1117">
 
-    <Grid ColumnDefinitions="210,*">
+    <Grid ColumnDefinitions="218,*">
 
-        <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SIDEBAR                                                            -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
         <Border Grid.Column="0"
-                Background="#161B22"
-                BorderBrush="#30363D"
+                Background="#13171F"
+                BorderBrush="#262D38"
                 BorderThickness="0,0,1,0">
             <DockPanel>
 
-                <!-- Cabecera: logo + usuario logueado -->
+                <!-- ── Cabecera: marca + usuario ───────────────────────────── -->
                 <Border DockPanel.Dock="Top"
-                        Padding="16,16,16,14"
-                        BorderBrush="#30363D"
+                        Padding="16,18,16,16"
+                        BorderBrush="#262D38"
                         BorderThickness="0,0,0,1">
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="14">
 
-                        <!-- Logo + app name -->
-                        <StackPanel Spacing="1">
-                            <TextBlock Text="🦾  Férula PoC"
-                                       FontSize="16" FontWeight="Bold"
-                                       Foreground="#E6EDF3"/>
-                            <TextBlock Text="PANEL DE CONTROL"
-                                       FontSize="9" Foreground="#6E7681"
-                                       LetterSpacing="1.5" FontWeight="SemiBold"/>
+                        <!-- Logo con acento de marca a la izquierda -->
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="4" Height="32" CornerRadius="2"
+                                    Background="{StaticResource BrandGradientV}"/>
+                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="Férula PoC"
+                                           FontSize="16" FontWeight="Bold"
+                                           Foreground="#F0F4F9"/>
+                                <TextBlock Text="PANEL DE CONTROL"
+                                           FontSize="9" Foreground="#6E7681"
+                                           LetterSpacing="2" FontWeight="SemiBold"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <!-- Chip del usuario con avatar de inicial -->
+                        <!-- Chip del usuario con avatar de gradiente -->
                         <Border Background="#0D1117"
-                                BorderBrush="#30363D"
+                                BorderBrush="#262D38"
                                 BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="8,6">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <!-- Avatar: círculo con inicial -->
-                                <Border Background="#1F6FEB"
-                                        CornerRadius="10"
-                                        Width="22" Height="22">
+                                CornerRadius="8"
+                                Padding="8,7">
+                            <StackPanel Orientation="Horizontal" Spacing="9">
+                                <Border CornerRadius="11" Width="24" Height="24"
+                                        Background="{StaticResource BrandGradient}">
                                     <TextBlock Text="{Binding InicialUsuario}"
-                                               FontSize="10" FontWeight="Bold"
+                                               FontSize="11" FontWeight="Bold"
                                                Foreground="White"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="{Binding NombreUsuario}"
-                                           Foreground="#C9D1D9"
-                                           FontSize="12"
-                                           VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis"/>
+                                <StackPanel Spacing="0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding NombreUsuario}"
+                                               Foreground="#E6EDF3"
+                                               FontSize="12" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="Sesión activa"
+                                               Foreground="#3FB950" FontSize="10"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
                     </StackPanel>
                 </Border>
 
-                <!-- Cerrar Sesión — anclado al fondo -->
+                <!-- ── Cerrar Sesión (anclado al fondo) ────────────────────── -->
                 <Button DockPanel.Dock="Bottom"
                         Content="↩   Cerrar Sesión"
                         Command="{Binding LogoutCommand}"
@@ -67,47 +74,61 @@
                         Foreground="#E63946"
                         Margin="0,4,8,12"/>
 
-                <!-- Mi Perfil — sobre el logout -->
+                <!-- ── Mi Perfil (sobre el logout) ─────────────────────────── -->
                 <Button DockPanel.Dock="Bottom"
                         Content="👤   Mi Perfil"
                         Command="{Binding NavegarAPerfilCommand}"
                         Classes="nav-btn"
+                        Classes.active="{Binding PaginaActiva,
+                            Converter={StaticResource Eq}, ConverterParameter=perfil}"
                         Margin="0,8,8,0"/>
 
-                <!-- Ítems de navegación -->
-                <StackPanel Margin="0,16,8,0" Spacing="2">
+                <!-- ── Ítems de navegación ─────────────────────────────────── -->
+                <StackPanel Margin="0,18,8,0" Spacing="3">
 
                     <TextBlock Text="NAVEGACIÓN"
                                Classes="stat-label"
-                               Margin="14,0,0,8"/>
+                               Margin="15,0,0,8"/>
                     <Button Content="📋   Sesión Libre"
                             Command="{Binding NavegarASesionLibreCommand}"
-                            Classes="nav-btn"/>
+                            Classes="nav-btn"
+                            Classes.active="{Binding PaginaActiva,
+                                Converter={StaticResource Eq}, ConverterParameter=sesion}"/>
                     <Button Content="📅   Rutinas Programadas"
                             Command="{Binding NavegarARutinasProgramadasCommand}"
-                            Classes="nav-btn"/>
+                            Classes="nav-btn"
+                            Classes.active="{Binding PaginaActiva,
+                                Converter={StaticResource Eq}, ConverterParameter=rutinas}"/>
                     <Button Content="📊   Ver Informes"
                             Command="{Binding NavegarAInformesCommand}"
-                            Classes="nav-btn"/>
+                            Classes="nav-btn"
+                            Classes.active="{Binding PaginaActiva,
+                                Converter={StaticResource Eq}, ConverterParameter=informes}"/>
 
-                    <Separator Background="#21262D" Margin="14,10,14,6"/>
+                    <Separator Background="#222A35" Margin="15,12,14,6"/>
 
                     <TextBlock Text="COMUNIDAD"
                                Classes="stat-label"
-                               Margin="14,0,0,8"/>
+                               Margin="15,0,0,8"/>
                     <Button Content="📬   Bandeja de Entrada"
                             Command="{Binding NavegarABandejaEntradaCommand}"
-                            Classes="nav-btn"/>
+                            Classes="nav-btn"
+                            Classes.active="{Binding PaginaActiva,
+                                Converter={StaticResource Eq}, ConverterParameter=bandeja}"/>
                     <Button Content="📤   Compartir Rutina"
                             Command="{Binding NavegarACompartirRutinaCommand}"
-                            Classes="nav-btn"/>
+                            Classes="nav-btn"
+                            Classes.active="{Binding PaginaActiva,
+                                Converter={StaticResource Eq}, ConverterParameter=compartir}"/>
 
                 </StackPanel>
 
             </DockPanel>
         </Border>
 
-        <!-- ── CONTENIDO INTERIOR ───────────────────────────────────────────── -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- CONTENIDO INTERIOR                                                 -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
         <ContentControl Grid.Column="1"
                         Content="{Binding VistaInterior}"/>
 
