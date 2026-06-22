@@ -14,11 +14,8 @@
                 BorderThickness="0,0,0,1"
                 Padding="28,20">
             <StackPanel Spacing="4">
-                <TextBlock Text="MI PERFIL"
-                           Foreground="#8B949E" FontSize="11" FontWeight="Bold"
-                           LetterSpacing="1.5"/>
-                <TextBlock Text="Datos de tu cuenta"
-                           Foreground="#E6EDF3" FontSize="20" FontWeight="SemiBold"/>
+                <TextBlock Text="MI PERFIL" Classes="page-eyebrow"/>
+                <TextBlock Text="Datos de tu cuenta" Classes="page-title"/>
             </StackPanel>
         </Border>
 
@@ -27,25 +24,20 @@
             <StackPanel Spacing="24" MaxWidth="480">
 
                 <!-- Tarjeta de identidad -->
-                <Border Background="#161B22"
-                        BorderBrush="#30363D"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="28,24">
+                <Border Classes="card" Padding="28,24">
                     <StackPanel Spacing="20">
 
                         <!-- Avatar + nombre + rol -->
                         <StackPanel Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
 
-                            <!-- Círculo con iniciales -->
-                            <Border Background="#21262D"
-                                    BorderBrush="#30363D"
-                                    BorderThickness="2"
+                            <!-- Círculo con iniciales (gradiente de marca) -->
+                            <Border Background="{StaticResource BrandGradient}"
                                     CornerRadius="36"
-                                    Width="72" Height="72">
+                                    Width="72" Height="72"
+                                    BoxShadow="0 4 16 0 #401F6FEB">
                                 <TextBlock Text="{Binding Iniciales}"
                                            FontSize="24" FontWeight="Bold"
-                                           Foreground="#E6EDF3"
+                                           Foreground="White"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"/>
                             </Border>
@@ -103,11 +95,7 @@
                 </Border>
 
                 <!-- Aviso contraseña -->
-                <Border Background="#161B22"
-                        BorderBrush="#30363D"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="16,12">
+                <Border Classes="card" Padding="16,12">
                     <TextBlock Text="🔒  La contraseña se almacena como hash SHA-256 y no puede visualizarse."
                                Foreground="#6E7681" FontSize="12" TextWrapping="Wrap"/>
                 </Border>

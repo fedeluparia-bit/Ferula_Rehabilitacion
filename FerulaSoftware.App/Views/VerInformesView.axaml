@@ -68,7 +68,8 @@
                 </Border>
 
                 <!-- Lista -->
-                <ListBox Background="Transparent"
+                <ListBox Classes="sessions"
+                         Background="Transparent"
                          ItemsSource="{Binding SesionesHistoricas}"
                          SelectedItem="{Binding SesionSeleccionada, Mode=TwoWay}"
                          Margin="0">

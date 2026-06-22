@@ -2,7 +2,35 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="FerulaSoftware.App.App"
              xmlns:local="using:FerulaSoftware.App"
-             RequestedThemeVariant="Default">
+             xmlns:conv="using:FerulaSoftware.App.Converters"
+             RequestedThemeVariant="Dark">
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- RECURSOS — tokens de marca reutilizables                                -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <Application.Resources>
+
+        <conv:StringEqualsConverter x:Key="Eq"/>
+
+        <!-- Gradiente de marca: azul → cian (horizontal, para botones y títulos) -->
+        <LinearGradientBrush x:Key="BrandGradient" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Offset="0"   Color="#1F6FEB"/>
+            <GradientStop Offset="1"   Color="#4CC9F0"/>
+        </LinearGradientBrush>
+
+        <!-- Gradiente de marca vertical (para barras de acento del sidebar) -->
+        <LinearGradientBrush x:Key="BrandGradientV" StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Offset="0"   Color="#4CC9F0"/>
+            <GradientStop Offset="1"   Color="#1F6FEB"/>
+        </LinearGradientBrush>
+
+        <!-- Gradiente del botón primario (vertical, con profundidad) -->
+        <LinearGradientBrush x:Key="PrimaryButtonBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Offset="0"   Color="#2484FF"/>
+            <GradientStop Offset="1"   Color="#1160D0"/>
+        </LinearGradientBrush>
+
+    </Application.Resources>
 
     <Application.DataTemplates>
         <local:ViewLocator/>
@@ -11,16 +39,82 @@
     <Application.Styles>
         <FluentTheme />
 
-        <!-- ── Tarjeta de estadística ─────────────────────────────────────── -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- INPUTS GLOBALES — se aplican a TODAS las vistas automáticamente    -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+
+        <!-- TextBox: radio, altura y foco con acento de marca -->
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="MinHeight"    Value="40"/>
+            <Setter Property="FontSize"     Value="14"/>
+            <Setter Property="SelectionBrush" Value="#2C5AA0"/>
+        </Style>
+        <Style Selector="TextBox:focus-within /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush"     Value="#2484FF"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+
+        <!-- ComboBox y NumericUpDown: radio y altura consistentes -->
+        <Style Selector="ComboBox">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="MinHeight"    Value="40"/>
+        </Style>
+        <Style Selector="NumericUpDown">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="MinHeight"    Value="40"/>
+        </Style>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- TIPOGRAFÍA — encabezados de página reutilizables                   -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Eyebrow: etiqueta pequeña en mayúsculas sobre el título -->
+        <Style Selector="TextBlock.page-eyebrow">
+            <Setter Property="FontSize"      Value="11"/>
+            <Setter Property="FontWeight"    Value="Bold"/>
+            <Setter Property="Foreground"    Value="#6E7681"/>
+            <Setter Property="LetterSpacing" Value="2"/>
+        </Style>
+        <!-- Título principal de página -->
+        <Style Selector="TextBlock.page-title">
+            <Setter Property="FontSize"   Value="22"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#F0F4F9"/>
+        </Style>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- TARJETAS                                                            -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Tarjeta de contenido genérica -->
+        <Style Selector="Border.card">
+            <Setter Property="Background"      Value="#161B22"/>
+            <Setter Property="BorderBrush"     Value="#262D38"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="10"/>
+            <Setter Property="BoxShadow"       Value="0 4 18 0 #2A000000"/>
+        </Style>
+
+        <!-- Tarjeta de estadística con sombra y realce al pasar el cursor -->
         <Style Selector="Border.stat-card">
             <Setter Property="Background"      Value="#161B22"/>
-            <Setter Property="BorderBrush"     Value="#21262D"/>
+            <Setter Property="BorderBrush"     Value="#262D38"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius"    Value="8"/>
-            <Setter Property="Padding"         Value="16,12"/>
-            <Setter Property="Margin"          Value="0,0,12,0"/>
-            <Setter Property="BoxShadow"       Value="0 2 10 0 #1F000000"/>
+            <Setter Property="CornerRadius"    Value="10"/>
+            <Setter Property="Padding"         Value="16,13"/>
+            <Setter Property="Margin"          Value="0,0,12,12"/>
+            <Setter Property="BoxShadow"       Value="0 3 12 0 #22000000"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18"/>
+                </Transitions>
+            </Setter>
         </Style>
+        <Style Selector="Border.stat-card:pointerover">
+            <Setter Property="BorderBrush" Value="#3A4757"/>
+        </Style>
+
         <Style Selector="TextBlock.stat-label">
             <Setter Property="FontSize"      Value="10"/>
             <Setter Property="FontWeight"    Value="SemiBold"/>
@@ -33,16 +127,13 @@
             <Setter Property="Foreground" Value="#E6EDF3"/>
         </Style>
 
-        <!-- ── Botón primario — azul con degradado ──────────────────────── -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- BOTONES                                                             -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Primario — azul con degradado y profundidad -->
         <Style Selector="Button.btn-primary">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                        <GradientStop Offset="0" Color="#2484FF"/>
-                        <GradientStop Offset="1" Color="#1160D0"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background"     Value="{StaticResource PrimaryButtonBrush}"/>
             <Setter Property="Foreground"     Value="White"/>
             <Setter Property="FontWeight"     Value="SemiBold"/>
             <Setter Property="CornerRadius"   Value="6"/>
@@ -57,7 +148,7 @@
             <Setter Property="Background" Value="#0E4DB8"/>
         </Style>
 
-        <!-- ── Botón secundario — gris ──────────────────────────────────── -->
+        <!-- Secundario — superficie gris -->
         <Style Selector="Button.btn-secondary">
             <Setter Property="Background"      Value="#21262D"/>
             <Setter Property="Foreground"      Value="#C9D1D9"/>
@@ -75,7 +166,7 @@
             <Setter Property="Background" Value="#3C444D"/>
         </Style>
 
-        <!-- ── Botón E-STOP — rojo ──────────────────────────────────────── -->
+        <!-- E-STOP — rojo de emergencia -->
         <Style Selector="Button.btn-estop">
             <Setter Property="Background"     Value="#B91C1C"/>
             <Setter Property="Foreground"     Value="White"/>
@@ -93,28 +184,59 @@
             <Setter Property="Background" Value="#7F1D1D"/>
         </Style>
 
-        <!-- ── Botón de navegación lateral ─────────────────────────────── -->
-        <!-- BorderThickness="2,0,0,0" reserva espacio siempre → sin salto de layout en hover -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- NAVEGACIÓN LATERAL — con estado activo (Classes.active)            -->
+        <!-- BorderThickness reserva 3px siempre → la barra de acento no        -->
+        <!-- desplaza el texto al cambiar de estado.                            -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
         <Style Selector="Button.nav-btn">
             <Setter Property="Background"      Value="Transparent"/>
             <Setter Property="Foreground"      Value="#C9D1D9"/>
             <Setter Property="BorderBrush"     Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="2,0,0,0"/>
+            <Setter Property="BorderThickness" Value="3,0,0,0"/>
             <Setter Property="CornerRadius"    Value="0,6,6,0"/>
-            <Setter Property="Padding"         Value="10,9,12,9"/>
+            <Setter Property="Padding"         Value="11,9,12,9"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="HorizontalAlignment"        Value="Stretch"/>
             <Setter Property="FontSize"        Value="13"/>
-        </Style>
-        <Style Selector="Button.nav-btn:pointerover">
-            <Setter Property="BorderBrush" Value="#1F6FEB"/>
-            <Setter Property="Foreground"  Value="#E6EDF3"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                    <BrushTransition Property="Foreground"  Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
         </Style>
         <Style Selector="Button.nav-btn:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1E2430"/>
+            <Setter Property="Background" Value="#1A2029"/>
         </Style>
         <Style Selector="Button.nav-btn:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="#2D3340"/>
+        </Style>
+
+        <!-- Estado ACTIVO: barra de marca a la izquierda + fondo + texto vivo -->
+        <Style Selector="Button.nav-btn.active">
+            <Setter Property="BorderBrush" Value="{StaticResource BrandGradientV}"/>
+            <Setter Property="Foreground"  Value="#FFFFFF"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.nav-btn.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1B2A40"/>
+        </Style>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- LISTA DE SESIONES (Ver Informes) — selección con acento           -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <Style Selector="ListBox.sessions">
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="ListBox.sessions ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="ListBox.sessions ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1B2A40"/>
+        </Style>
+        <Style Selector="ListBox.sessions ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#171D26"/>
         </Style>
 
     </Application.Styles>

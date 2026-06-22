@@ -37,6 +37,9 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty] private ViewModelBase _vistaInterior;
 
+    // Clave de la página actual → controla qué ítem del sidebar se marca activo.
+    [ObservableProperty] private string _paginaActiva = "sesion";
+
     public DashboardViewModel(
         IWebSocketService   ws,
         Func<AppDbContext>  dbFactory,
@@ -61,7 +64,11 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     // ── Comandos de navegación ────────────────────────────────────────────────
 
     [RelayCommand]
-    private void NavegarASesionLibre() => VistaInterior = _sesionLibre;
+    private void NavegarASesionLibre()
+    {
+        VistaInterior = _sesionLibre;
+        PaginaActiva  = "sesion";
+    }
 
     [RelayCommand]
     private void NavegarARutinasProgramadas()
@@ -76,9 +83,11 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
                     // Precargar parámetros en SesionLibre y navegar a esa vista
                     _sesionLibre.AplicarRutina(rutina);
                     VistaInterior = _sesionLibre;
+                    PaginaActiva  = "sesion";
                 });
         }
         VistaInterior = _rutinasProgramadas;
+        PaginaActiva  = "rutinas";
     }
 
     [RelayCommand]
@@ -87,6 +96,7 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
         // Creación lazy: el ViewModel vive mientras dure el Dashboard
         _verInformes ??= new VerInformesViewModel(_dbFactory, _apiSync);
         VistaInterior = _verInformes;
+        PaginaActiva  = "informes";
 
         // Recarga el historial cada vez que el usuario entra a la vista,
         // para mostrar sesiones guardadas en la sesión actual de la app
@@ -100,6 +110,7 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
             _bandejaEntrada = new BandejaEntradaViewModel(_dbFactory, _apiSync);
 
         VistaInterior = _bandejaEntrada;
+        PaginaActiva  = "bandeja";
 
         // Carga automática al entrar para mostrar invitaciones frescas
         _ = _bandejaEntrada.DescargarInvitacionesCommand.ExecuteAsync(null);
@@ -110,6 +121,7 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     {
         _compartirRutina ??= new CompartirRutinaViewModel(_dbFactory, _apiSync);
         VistaInterior = _compartirRutina;
+        PaginaActiva  = "compartir";
     }
 
     [RelayCommand]
@@ -117,6 +129,7 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     {
         _perfil ??= new PerfilViewModel(_onLogout);
         VistaInterior = _perfil;
+        PaginaActiva  = "perfil";
     }
 
     [RelayCommand]
